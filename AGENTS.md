@@ -1,65 +1,84 @@
 # 项目上下文
 
-### 版本技术栈
+## 项目概述
 
-- **Framework**: Next.js 16 (App Router)
-- **Core**: React 19
-- **Language**: TypeScript 5
-- **UI 组件**: shadcn/ui (基于 Radix UI)
-- **Styling**: Tailwind CSS 4
+**PEPE/DOGE 突破雷达**——一个基于历史量化研究的行情观测型 Web 应用。它把研究包里 21 个历史「突破/失败」样本的量化特征，变成一套**确定性、可解释、可回放**的实时观测雷达：用 EMA20/50/100、ATR 压缩、量比、相对 BTC 强度、资金费率等指标，把币种状态归入六态状态机（观望 / 蓄势 / 临界 / 突破确认 / 等待回踩 / 失效），并对「机会分」与「过热/失效风险分」分别打分。
 
-## 目录结构
+**关键边界（用户长期约束，勿违反）：**
+- 仅覆盖 PEPE 与 DOGE 两个标的 + BTC 作为环境参照，不扩展到其它币种。
+- **不输出胜率、准确率、假突破概率或任何收益承诺**；只输出「机会分 / 风险分 / 满足/缺失条件 / 关键价位 / 证据来源与新鲜度」。
+- 历史维度**不设普通行情对照窗口，也不设失败样本对照**，只展示 21 个波段样本本身；缺失失败样本是已知缺口，如实标注、不补造。
+- 这是独立产品，与「滚仓计算器」无关，禁止读取/合并其代码。
+
+## 技术栈
+
+- Framework: Next.js 16 (App Router, `src/` 目录) + 自定义 server 入口 `src/server.ts`
+- React 19 / TypeScript 5 / Tailwind CSS 4 / shadcn/ui (Radix) / recharts（预装，本项目图表用自绘 SVG）
+- 包管理器：**仅 pnpm**，禁止 npm / yarn
+
+## 目录结构（本项目关键部分）
 
 ```
-├── public/                 # 静态资源
-├── scripts/                # 构建与启动脚本
-│   ├── build.sh            # 构建脚本
-│   ├── dev.sh              # 开发环境启动脚本
-│   ├── prepare.sh          # 预处理脚本
-│   └── start.sh            # 生产环境启动脚本
-├── src/
-│   ├── app/                # 页面路由与布局
-│   ├── components/ui/      # Shadcn UI 组件库
-│   ├── hooks/              # 自定义 Hooks
-│   ├── lib/                # 工具库
-│   │   └── utils.ts        # 通用工具函数 (cn)
-│   └── server.ts           # 自定义服务端入口
-├── next.config.ts          # Next.js 配置
-├── package.json            # 项目依赖管理
-└── tsconfig.json           # TypeScript 配置
+src/
+  lib/
+    types.ts          # 核心数据模型（含 EvidenceValue 值与来源/新鲜度、AssetSignal、六态 StateCode）
+    config.ts         # 权重、候选阈值、六态元信息 STATE_META、标的 ASSETS（集中管理，勿散落）
+    indicators.ts     # 指标纯函数：EMA/ATR/量比/相对强度/maxDrawdown（与历史分析脚本逐行等价，勿改算法）
+    event-analysis.ts # 历史事件定义 EVENT_DEFS、CAMPAIGNS 分组、computeEventMetrics（复刻研究脚本）
+    analysis.ts       # 实时引擎：analyzeAsset/analyzeBtcEnv/computeFeatures/评分/硬否决
+    state-machine.ts  # 六态状态机 determineState(state, vars)
+    similarity.ts     # 特征向量 + z-score + 余弦相似度（A 类证据特征）
+    data-store.ts     # 载入 src/data 快照：getHistoricalEvents/getHistoricalEventById/getWindowData/getSnapshotCandles/getSnapshotFunding
+    market-client.ts  # 第三方数据代理：OKX/Binance，超时/内存缓存/限频/去重/错误分类
+    market-service.ts # getMarketOverview()：撮合环境+币种信号，网络不可用时返回 status='unavailable'
+    format.ts         # 数值/时间格式化（时间统一 UTC 存储、Asia/Shanghai 展示）
+  app/
+    page.tsx            # 总览：实时雷达 + 历史样本
+    asset/[coin]/page.tsx     # PEPE/DOGE 详情
+    history/page.tsx          # 历史样本矿场
+    history/[id]/page.tsx     # 历史事件详情（指标+窗口图+原始截图）
+    similarity/page.tsx       # 相似性（历史特征空间 + 当前像谁）
+    methodology/page.tsx      # 方法论 + 阈值回放实验
+    api/                    # REST 接口（见下）
+  components/market/   # CandleChart(自绘SVG)/StateBadge/ScoreRing/SignalCard/LiveRadar/HistoryGrid/AssetDetail/SimilarityView
+  components/layout/   # SiteHeader/SiteFooter
+  data/                # 研究快照 JSON：event-metrics.json + candles/*.json + funding/*.json（勿改动原始数值）
+public/screenshots/    # 21 张原始截图，命名 P01..P11 / D01..D10
 ```
 
-- 项目文件（如 app 目录、pages 目录、components 等）默认初始化到 `src/` 目录下。
+## 关键入口 / 接口清单
 
-## 包管理规范
+页面路由：`/`、`/asset/pepe`、`/asset/doge`、`/history`、`/history/:id`、`/similarity`、`/methodology`
 
-**仅允许使用 pnpm** 作为包管理器，**严禁使用 npm 或 yarn**。
-**常用命令**：
-- 安装依赖：`pnpm add <package>`
-- 安装开发依赖：`pnpm add -D <package>`
-- 安装所有依赖：`pnpm install`
-- 移除依赖：`pnpm remove <package>`
+REST 接口（`app/api/**/route.ts`，前端统一相对路径调用 `/api/...`）：
 
-## 开发规范
+| 接口 | 说明 | 降级行为 |
+|---|---|---|
+| `GET /api/market/overview` | 环境+双币种信号 | 无网返回 `{ok,status:'unavailable'}` + summary |
+| `GET /api/market/candles?instId=&bar=` | K 线 | 无网回退到研究快照 `{source:'snapshot',degraded:true}` |
+| `GET /api/market/funding?coin=` | 资金费率 | 无网回退快照 |
+| `GET /api/history` | 21 事件列表 | 纯本地，恒可用 |
+| `GET /api/history/:id` | 事件详情+窗口数据 | 纯本地 |
+| `GET /api/history/:id/window` | 启动前快照（阈值回放用） | 纯本地 |
+| `GET /api/similarity` | 历史特征矩阵+散点 | 纯本地 |
+| `GET /api/similarity/current` | 当前特征 vs 历史相似 | 无网返回 `status:'unavailable'` |
 
-### 编码规范
+## 运行与预览
 
-- 默认按 TypeScript `strict` 心智写代码；优先复用当前作用域已声明的变量、函数、类型和导入，禁止引用未声明标识符或拼错变量名。
-- 禁止隐式 `any` 和 `as any`；函数参数、返回值、解构项、事件对象、`catch` 错误在使用前应有明确类型或先完成类型收窄，并清理未使用的变量和导入。
+- 预览：`preview_enable = "enabled"`，对外只暴露 5000，`.preview` 写 `expose_port = 5000`，已被 `.gitignore` 忽略。
+- 开发运行：`bash scripts/dev.sh`（`tsx watch src/server.ts`，监听 `process.env.PORT||5000`）。
+- 数据请求走服务端 `market-client`（`src/server.ts` 内自定义 server），前端不直接访问第三方接口，规避 CORS 与密钥暴露。
+- 环境无外网（OKX/Binance 被沙箱 DNS 墙为 169.254.0.2），实时数据恒 `unavailable`/`snapshot` 降级——历史模式仍完整可用；这是预期行为，不要反复确认或强行联网。
 
-### next.config 配置规范
+## 用户偏好与长期约束
 
-- 配置的路径不要写死绝对路径，必须使用 path.resolve(__dirname, ...)、import.meta.dirname 或 process.cwd() 动态拼接。
+- 全部命中条件、评分、状态判定**必须可解释**：给「值 + 证据来源 + 时间戳 + 新鲜度(ok/stale/missing)」，不画「魔法图」。
+- 时间戳一律 UTC 存储、页面按 Asia/Shanghai 显示。
+- 不谈收益/准确性/胜率；缺失的失败样本与普通行情对照窗口，在 UI 与方法论里如实标注为「已知缺口」。
 
-### Hydration 问题防范
+## 常见问题和预防
 
-1. 严禁在 JSX 渲染逻辑中直接使用 typeof window、Date.now()、Math.random() 等动态数据。**必须使用 'use client' 并配合 useEffect + useState 确保动态内容仅在客户端挂载后渲染**；同时严禁非法 HTML 嵌套（如 <p> 嵌套 <div>）。
-2. **禁止使用 head 标签**，优先使用 metadata，详见文档：https://nextjs.org/docs/app/api-reference/functions/generate-metadata
-   1. 三方 CSS、字体等资源可在 `globals.css` 中顶部通过 `@import` 引入或使用 next/font
-   2. preload, preconnect, dns-prefetch 通过 ReactDOM 的 preload、preconnect、dns-prefetch 方法引入
-   3. json-ld 可阅读 https://nextjs.org/docs/app/guides/json-ld
-
-## UI 设计与组件规范 (UI & Styling Standards)
-
-- 模板默认预装核心组件库 `shadcn/ui`，位于`src/components/ui/`目录下
-- Next.js 项目**必须默认**采用 shadcn/ui 组件、风格和规范，**除非用户指定用其他的组件和规范。**
+- `pnpm test` 跑纯函数单测 + 21 事件回归：`node --import tsx --test src/lib/*.test.ts`；`event-analysis.test.ts` 会对一行`事件`是否与 `event-metrics.json` 完全一致。
+- 改 `indicators.ts` 的算法会破坏与历史研究脚本的一致性，必须回归测试通过后再交付。
+- `globals.css` 里自定义 Tailwind 主题色：`--radar`(荧光青)、`--pepe`、`--doge`、`--btc`、`--bull`、`--bear`、`--warn`；新增组件配色用这些 token，不要写死 hex。
+- 图表为自绘 SVG（`CandleChart.tsx`），不要引入额外图表依赖。
