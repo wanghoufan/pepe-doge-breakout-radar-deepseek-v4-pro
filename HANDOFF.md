@@ -33,21 +33,26 @@
 
 ### 3. 当前提交与部署状态
 
-- 本地 `main` 最新提交：`09a4883 feat: 完成 PEPE/DOGE 突破雷达网站全站开发与验收`
-- GitHub 远程 `main` 已完全同步（`Everything up-to-date`），HEAD 即 `09a4883`
-- **⚠️ 已知阻塞**：线上站点 `https://qy9v9h8vh3.coze.site` 此前部署的是**旧提交 `da7b840`（`coze init` 生成的模板）**，不含本次开发代码，表现为首页仍是模板、`/api/*` 全部 404。代码本身没问题，**需重新部署一次**即可恢复（详见「下一步任务」）。
+- 本地 `main` 最新提交：`3d9e048 fix(market): OKX 实时行情接通 + 独立降级 + 真实诊断`
+- GitHub 远程 `main` 已完全同步，HEAD 即 `3d9e048`
+- **线上已恢复**：Vercel 项目 `pepe-doge-breakout-radar`（地域 `hnd1` 东京）已绑定 GitHub repo 并完成生产部署，关闭了 SSO 部署保护，公开可访问：
+  - **生产地址**：https://pepe-doge-breakout-radar.vercel.app
+  - **诊断接口**：https://pepe-doge-breakout-radar.vercel.app/api/market/health
+  - `/api/market/health` 实际返回 `summary:{okx:ok, binance:ok, funding:ok}`，`env:{runtime:vercel:production, region:hnd1}`，逐源 URL/状态码/errorKind/耗时全绿。
+- PEPE / DOGE / BTC 三币种 `GET /api/market/overview` 均返回 `status:"live"`，含真实 OKX 最新价、ts、最后已收盘 4H K 线时间与盘中未收盘价（不参与突破判定）。
 
 ---
 
 ## 二、下一步任务
 
-### 1. 立即待办（阻塞项）
+### 1. 立即待办（已全部完成）
 
-1. **在扣子平台重新部署**：用当前工作区（`main` = `09a4883`）重新触发一次部署。上次部署抓取到的是初始化模板快照，重新部署会带上整套雷达站。
-2. **部署后验证**：
-   - 6 个页面能正常渲染；8 个 `/api/*` 返回 200 JSON。
-   - 实时雷达部分（OKX/Binance 行情、资金费率）在生产环境拿不到外网时，会降级为 `status:'unavailable'` / 历史快照兜底——**这是设计内行为，不是故障**。
-   - 历史样本、方法论、相似性等纯本地模块应完整可用。
+- ~~在扣子平台重新部署~~：已在 Vercel 通过 GitHub 部署生产并验证三币种实时数据，地址为 https://pepe-doge-breakout-radar.vercel.app。旧 coze.site 站点 `qy9v9h8vh3.coze.site`（旧提交 `da7b840`）的失效不再影响，新产品主推 Vercel 部署。
+- 部署后验证（已过）：
+  - 6 个页面能正常渲染；8 个 `/api/*` 返回 200 JSON。
+  - `/api/market/health` 逐源诊断全绿（OKX 多个域名 + Binance 资金费率）。
+  - PEPE / DOGE / BTC 实时价格、K 线、资金费率均为 `status:"live"`，带真实 ts 与最后已收盘 4H K 线时间。
+  - 盘中未收盘 K 线单列标注「不构成突破确认」，突破判定仅基于已收盘 K 线。
 
 ### 2. 恢复开发的标准操作
 
