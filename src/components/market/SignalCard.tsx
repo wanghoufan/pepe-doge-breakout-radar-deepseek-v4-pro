@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { StateBadge } from './StateBadge';
 import { ScoreRing } from './ScoreRing';
 import { ASSETS } from '@/lib/config';
-import { formatPrice, formatPct } from '@/lib/format';
+import { formatPrice, formatPct, formatTs } from '@/lib/format';
 import type { AssetId, AssetSignal } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -13,10 +13,14 @@ export function SignalCard({
   asset,
   signal,
   className,
+  price,
+  priceTs,
 }: {
   asset: AssetId;
   signal: AssetSignal | null;
   className?: string;
+  price?: number | null;
+  priceTs?: number | null;
 }) {
   const meta = ASSETS[asset];
 
@@ -34,7 +38,16 @@ export function SignalCard({
             </span>
             <span className="text-sm font-normal text-muted-foreground">突破雷达</span>
           </CardTitle>
-          {signal && <p className="mt-1 text-xs text-muted-foreground">现价序列 · 4H 收盘口径</p>}
+          {signal && (
+            <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
+              <span className="text-xs text-muted-foreground">OKX 实时价</span>
+              <span className="tnum font-mono text-sm">{formatPrice(price ?? null)}</span>
+              {priceTs ? (
+                <span className="text-[11px] text-muted-foreground">更新于 {formatTs(priceTs)}</span>
+              ) : null}
+            </div>
+          )}
+          {signal && <p className="mt-0.5 text-[11px] text-muted-foreground">判定口径 · 4H 已收盘 K 线</p>}
         </div>
         {signal && <StateBadge state={signal.state} />}
       </CardHeader>

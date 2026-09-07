@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getBinanceFunding } from '@/lib/market-client';
-import { getSnapshotFunding } from '@/lib/data-store';
+import { getFunding, type FundingCoin } from '@/lib/market-client';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
+/**
+ * 资金费率：Binance 优先，失败自动切到 OKX 公开接口（同为实时数据，非快照）。
+ * 两者都失败返回 503 与真实诊断。
+ */
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const coin = (url.searchParams.get('coin') ?? 'PEPE').toUpperCase();
@@ -11,25 +15,29 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: 'invalid_coin' }, { status: 400 });
   }
   const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? 30) || 30));
-  try {
-    const data = await getBinanceFunding(coin, limit);
-    return NextResponse.json({ ok: true, source: 'live', data: { symbol: coin, points: data } });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'unknown_error';
-    // 线下/受限网络下，回退到历史资金费率快照（明确标注）。
-    const snap = getSnapshotFunding(coin);
-    if (snap.length) {
-      return NextResponse.json({
-        ok: true,
-        source: 'snapshot',
-        degraded: true,
-        note: '实时资金费率不可用，已回退到历史快照',
-        data: { symbol: coin, points: snap.slice(-limit) },
-      });
-    }
+
+  const res = await getFunding(coin as FundingCoin, limit);
+  if (!res.ok) {
     return NextResponse.json(
-      { ok: false, error: message, message: '资金费率接口不可用（可能受网络策略限制）' },
+      {
+        ok: false,
+        source: 'unavailable',
+        error: res.error,
+        message: `资金费率实时接口不可用：${res.diag.errorDetail ?? res.error}`,
+        diag: res.diag,
+      },
       { status: 503 },
     );
   }
+
+  return NextResponse.json({
+    ok: true,
+    source: 'live',
+    provider: res.data.provider,
+    degraded: res.data.provider === 'okx',
+    note: res.data.provider === 'okx' ? 'Binance 不可用，已切换至 OKX 实时资金费率' : undefined,
+    fetchedAt: Date.now(),
+    data: { symbol: res.data.symbol, points: res.data.points },
+    diag: res.diag,
+  });
 }

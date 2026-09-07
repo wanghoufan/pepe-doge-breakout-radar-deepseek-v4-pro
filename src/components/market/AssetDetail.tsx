@@ -7,33 +7,59 @@ import { Button } from '@/components/ui/button';
 import { StateBadge } from '@/components/market/StateBadge';
 import { ScoreRing } from '@/components/market/ScoreRing';
 import { CandleChart } from '@/components/market/CandleChart';
+import { SourceLine, DiagBox, type DiagLike } from '@/components/market/DataStatus';
 import type { Candle, AssetSignal, Timeframe } from '@/lib/types';
 import { ASSETS } from '@/lib/config';
-import { formatPrice, formatPct } from '@/lib/format';
+import { formatPrice, formatPct, formatTs, relativeTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 interface CandlesResp {
   ok: boolean;
-  source: 'live' | 'snapshot';
-  degraded?: boolean;
-  note?: string;
-  data: { instId: string; bar: string; candles: Candle[]; until: number | null };
+  source: 'live' | 'unavailable';
+  provider?: string;
+  fetchedAt?: number;
+  error?: string;
   message?: string;
+  diag?: DiagLike;
+  data: {
+    instId: string;
+    bar: string;
+    candles: Candle[];
+    confirmedCandles: Candle[];
+    intradayCandle: Candle | null;
+    lastConfirmedTs: number | null;
+  };
 }
 
 interface FundingResp {
   ok: boolean;
-  source: 'live' | 'snapshot';
+  source: 'live' | 'unavailable';
+  provider?: string;
   degraded?: boolean;
   note?: string;
-  data: { symbol: string; points: { ts: number; rate: number }[] };
+  fetchedAt?: number;
+  error?: string;
   message?: string;
+  diag?: DiagLike;
+  data: { symbol: string; points: { ts: number; rate: number }[] };
 }
 
 interface OverviewResp {
   ok: boolean;
-  status: 'live' | 'unavailable';
-  data: { pepe: AssetSignal | null; doge: AssetSignal | null };
+  status: 'live' | 'partial' | 'unavailable';
+  generatedAt: number;
+  summary: string;
+  error: string | null;
+  errors?: string[];
+  fundingProvider?: 'binance' | 'okx' | null;
+  data: {
+    pepe: AssetSignal | null;
+    doge: AssetSignal | null;
+    prices: Record<'PEPE' | 'DOGE' | 'BTC', { last: number; ts: number } | null>;
+    lastConfirmedTs: { PEPE: number | null; DOGE: number | null; BTC: number | null };
+    intraday: { PEPE: Candle | null; DOGE: Candle | null; BTC: Candle | null };
+    sources: Record<string, unknown>;
+  };
 }
 
 const TIMEFRAMES: { key: Timeframe; label: string }[] = [
@@ -52,16 +78,22 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
 
   const signal = coin === 'PEPE' ? overviewApi.data?.data.pepe : overviewApi.data?.data.doge;
   const live = overviewApi.data?.status === 'live';
+  const price = overviewApi.data?.data.prices?.[coin] ?? null;
 
   const candles = candlesApi.data?.data.candles ?? [];
-  const source = candlesApi.data?.source;
-  const until = candlesApi.data?.data.until ?? null;
+  const lastConfirmedTs = candlesApi.data?.data.lastConfirmedTs ?? null;
+  const intraday = candlesApi.data?.data.intradayCandle ?? null;
+  const instId = candlesApi.data?.data.instId ?? `${coin}-USDT-SWAP`;
 
   const funding = fundingApi.data?.data.points ?? [];
-  const fundingAvg = funding.length
-    ? (funding.reduce((s, r) => s + r.rate, 0) / funding.length) * 100
-    : null;
+  const fundingAvg = funding.length ? (funding.reduce((s, r) => s + r.rate, 0) / funding.length) * 100 : null;
   const fundingMax = funding.length ? Math.max(...funding.map((r) => r.rate)) * 100 : null;
+
+  const refreshAll = () => {
+    candlesApi.refresh();
+    fundingApi.refresh();
+    overviewApi.refresh();
+  };
 
   return (
     <div className="space-y-6">
@@ -71,10 +103,50 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
           <h1 className="font-mono text-2xl font-semibold" style={{ color: meta.themecolor }}>
             {meta.symbol}
           </h1>
-          <span className="text-sm text-muted-foreground">突破雷达 · 现货/永续 4H 口径</span>
+          <span className="text-sm text-muted-foreground">突破雷达 · OKX 永续 4H 口径</span>
         </div>
-        {signal ? <StateBadge state={signal.state} /> : null}
+        <div className="flex items-center gap-2">
+          {signal ? <StateBadge state={signal.state} /> : null}
+          <Button variant="outline" size="sm" onClick={refreshAll}>
+            刷新
+          </Button>
+        </div>
       </header>
+
+      {/* 数据来源与更新时间 */}
+      <Card>
+        <CardContent className="space-y-2 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <SourceLine
+              provider={candlesApi.data?.provider ?? 'okx'}
+              instId={instId}
+              fetchedAt={price?.ts ?? candlesApi.data?.fetchedAt ?? null}
+              label={live ? '实时' : '不可用'}
+            />
+            <div className="text-sm">
+              <span className="text-muted-foreground">最新价 </span>
+              <span className="tnum font-mono font-medium">{formatPrice(price?.last ?? null)}</span>
+              {price?.ts ? (
+                <span className="ml-2 text-[11px] text-muted-foreground">
+                  更新于 {formatTs(price.ts)}（{relativeTime(price.ts)}）
+                </span>
+              ) : null}
+            </div>
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            K 线：{candlesApi.data ? `OKX ${instId} ${tf}` : '请求中…'}
+            {lastConfirmedTs ? ` · 最后已收盘 ${formatTs(lastConfirmedTs)}` : ''}
+            {intraday ? (
+              <span className="ml-1 text-warn">
+                · 盘中未收盘 {formatPrice(intraday.c)}（不构成突破确认）
+              </span>
+            ) : null}
+          </div>
+          {candlesApi.data && !candlesApi.data.ok ? (
+            <DiagBox diag={candlesApi.data.diag} title={candlesApi.data.message ?? 'K 线实时接口不可用'} />
+          ) : null}
+        </CardContent>
+      </Card>
 
       {/* 评分 */}
       {signal && (
@@ -109,8 +181,20 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
 
       {!signal && !overviewApi.loading && (
         <Card className="border-warn/30 bg-warn/5">
-          <CardContent className="py-4 text-sm text-muted-foreground">
-            实时信号不可用，当前展示历史快照 K 线。部署到可访问 OKX / Binance 的环境后自动切换实时雷达。
+          <CardContent className="space-y-2 py-4 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground">实时信号不可用（未使用任何快照冒充）</p>
+            {overviewApi.data?.errors?.length ? (
+              <ul className="list-disc space-y-1 pl-5 text-[12px]">
+                {overviewApi.data.errors.map((e) => (
+                  <li key={e}>{e}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>{overviewApi.error ?? overviewApi.data?.error ?? '未知原因'}</p>
+            )}
+            <p className="text-[11px]">
+              仅当 OKX 返回「已收盘」4H K 线时才会给出突破判定；盘中未收盘 K 线只作展示。
+            </p>
           </CardContent>
         </Card>
       )}
@@ -118,9 +202,13 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
       {/* 图表 */}
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-sm font-medium">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-sm font-medium">
             价格与量能
-            {source === 'snapshot' && <span className="ml-2 text-[11px] text-warn">历史快照</span>}
+            {candlesApi.data?.ok ? (
+              <span className="text-[11px] font-normal text-radar">实时 · OKX</span>
+            ) : (
+              <span className="text-[11px] font-normal text-warn">实时不可用</span>
+            )}
           </CardTitle>
           <div className="flex gap-1 rounded-lg border border-border p-0.5">
             {TIMEFRAMES.map((t) => (
@@ -144,16 +232,19 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
           ) : candlesApi.loading ? (
             <div className="py-16 text-center text-sm text-muted-foreground">加载中…</div>
           ) : (
-            <div className="py-16 text-center text-sm text-muted-foreground">
-              {candlesApi.error ?? '该周期实时数据不可用，请切换 4H 查看历史快照'}
+            <div className="space-y-3 py-8">
+              <div className="text-center text-sm text-muted-foreground">
+                {candlesApi.error ?? candlesApi.data?.message ?? '实时数据不可用'}
+              </div>
+              <DiagBox diag={candlesApi.data?.diag} />
             </div>
           )}
-          {until && (
+          {lastConfirmedTs && (
             <p className="mt-2 text-[11px] text-muted-foreground">
-              数据截至 {new Date(until).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}（UTC+8）
+              最后已收盘 K 线：{formatTs(lastConfirmedTs)}（UTC+8）
+              {intraday ? `　盘中未收盘：${formatPrice(intraday.c)}（不参与判定）` : ''}
             </p>
           )}
-          {candlesApi.data?.note && <p className="mt-1 text-[11px] text-warn">{candlesApi.data.note}</p>}
         </CardContent>
       </Card>
 
@@ -161,11 +252,16 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">
-              资金费率{fundingApi.data?.degraded ? '（历史快照）' : ''}
+            <CardTitle className="flex flex-wrap items-center gap-2 text-sm font-medium">
+              资金费率
+              <span className="text-[11px] font-normal text-muted-foreground">
+                {fundingApi.data?.ok
+                  ? `来源 ${fundingApi.data.provider === 'okx' ? 'OKX' : 'Binance'}`
+                  : '不可用'}
+              </span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-md bg-muted/50 px-3 py-2">
                 <div className="text-[11px] text-muted-foreground">期间均值</div>
@@ -176,7 +272,15 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
                 <div className="tnum font-mono text-sm">{formatPct(fundingMax, 4)}</div>
               </div>
             </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">
+            {fundingApi.data?.ok ? (
+              <p className="text-[11px] text-muted-foreground">
+                更新于 {formatTs(fundingApi.data.fetchedAt ?? null)}
+                {fundingApi.data.note ? ` · ${fundingApi.data.note}` : ''}
+              </p>
+            ) : (
+              <DiagBox diag={fundingApi.data?.diag} title={fundingApi.data?.message ?? fundingApi.error ?? '资金费率不可用'} />
+            )}
+            <p className="text-[11px] text-muted-foreground">
               资金费率仅作拥挤度方向性参考，跨交易所口径不同，不单独下结论。
             </p>
           </CardContent>
