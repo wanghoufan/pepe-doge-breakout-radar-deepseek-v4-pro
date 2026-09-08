@@ -9,13 +9,14 @@
  * - Setup 高分只能解释「进入观察名单」，不能产生 BREAKOUT_TRACK / RETEST_WATCH。
  * - Trigger 高分只解释「当时突破结构较完整」，不代表未来收益概率。
  * - 实时 Action 绝不消费未来 Outcome Label（本函数签名中根本没有 outcome 字段）。
- * - DATA_VETO / 数据缺失一律走 DATA_BLOCKED，不沿用旧信号。
+ * - DATA_VETO 走 REJECT 的数据分支（不断言跌破）；feed 级缺失走 DATA_BLOCKED，不沿用旧信号。
  *
  * 本模块是纯函数（deterministic mapping），页面只负责 render。
  * 本轮未修改任何底层量化策略与阈值；OVERHEATED/WEAK 等展示分档为
  * display-only（见注释），不是交易阈值，未经回测，不做预测宣称。
  */
 import { DEFAULT_CONFIG } from './config';
+import { formatPrice } from './format';
 import type { AssetId, AssetSignal, EnvironmentGate, HardVetoKind, ScoreStatus, StateCode } from './types';
 
 export type ActionCode =
@@ -151,17 +152,11 @@ export const FOLLOW_THROUGH_COPY = {
   tooltip: 'Follow-through 当前是最值得继续验证的突破后管理指标，但尚未证明具有稳定的样本外预测优势。',
 } as const;
 
-function fmtNum(v: number | null): string {
-  if (v == null || !Number.isFinite(v)) return '—';
-  // 去除浮点计算伪影（例如 0.08957259999999999 → 0.089573），保留 6 位有效数字。
-  return String(parseFloat(v.toPrecision(6)));
-}
-
 export type FollowThroughGrade = 'NOT_STARTED' | 'PENDING' | 'WEAK' | 'HEALTHY' | 'FAILED';
 
 /**
  * Follow-through 状态文字（优先展示状态而非分数）。
- * 分档阈值（HEALTHY ≥ 60 / WEAK ≥ 35）为 display-only，不做预测宣称；
+ * 分档（HEALTHY ≥ 60，其余为 WEAK）为 display-only，不做预测宣称；
  * 缺失数据一律 PENDING，绝不判低分。
  */
 export function describeFollowThrough(
@@ -259,10 +254,57 @@ export function deriveActionState(input: ActionInput): ActionState {
   }
 
   const envOk = input.environmentGate !== 'BLOCK';
-  const vetoName = input.hardVetoKind !== 'NONE' ? input.hardVetoKind : null;
 
-  /* 2) 硬否决 / 环境 / 失效：任何高分都不能覆盖。MARKET_BLOCKED 按状态机定义只来自否决或环境 BLOCK，此处兜底同判。 */
+  /* 2) 硬否决 / 环境 / 失效：任何高分都不能覆盖。MARKET_BLOCKED 按状态机定义只来自否决或环境 BLOCK，此处兜底同判。
+   *
+   * 文案按否决种类分支（审查 §2.1）：无关键价位时不断言"跌破失效位"。
+   * 2a) DATA_VETO → 数据不足以判定结构；2b) 环境 BLOCK → 环境禁止跟踪；
+   * 2c) 结构性否决/失效 → 跌破失效位表述（仅当有价位证据或失效态）。 */
   if (input.hardVetoKind !== 'NONE' || !envOk || input.state === 'FAILED_BREAKOUT' || input.state === 'INVALIDATED' || input.state === 'MARKET_BLOCKED') {
+    const history = { ...historyBase, historicalOnly: true };
+    // 2a) DATA_VETO：K 线不足，无法判定结构——不做跌破断言。
+    if (input.hardVetoKind === 'DATA_VETO') {
+      return {
+        ...meta('REJECT'),
+        summary: '已收盘 K 线不足，数据不足以判定本轮突破结构，暂停跟踪。',
+        reasons: [
+          { ok: envOk, text: envOk ? 'BTC 环境当前允许' : 'BTC 环境 BLOCK：市场环境不允许跟踪突破' },
+          { ok: false, text: `DATA_VETO 已触发${input.hardVetoReason ? `：${input.hardVetoReason}` : ''}` },
+        ],
+        warnings: [],
+        keyLevels: levels,
+        nextConditions: [{ condition: '已收盘 K 线补齐后重新收盘确认', outcome: '重新评估当前行动', level: null }],
+        history,
+        entryHeat,
+        episodeStatus: '等待数据补齐后重新评估，不沿用过期判断。',
+        dataFreshness: freshness,
+      };
+    }
+    // 2b) 环境 BLOCK（无失效态）：环境禁止跟踪——不做跌破断言。
+    // BTC_VETO 本质是环境否决（触发时 gate 必为 BLOCK），同样走本分支并在 reasons 中点名。
+    if (!envOk && input.state !== 'FAILED_BREAKOUT' && input.state !== 'INVALIDATED') {
+      const why: ActionReason[] = [
+        { ok: false, text: 'BTC 环境 BLOCK：市场环境不允许跟踪突破' },
+      ];
+      if (input.hardVetoKind !== 'NONE') {
+        why.push({ ok: false, text: `${input.hardVetoKind} 已触发${input.hardVetoReason ? `：${input.hardVetoReason}` : ''}` });
+      }
+      why.push({ ok: false, text: '本轮不进入观察，不做结构判断' });
+      return {
+        ...meta('REJECT'),
+        summary: 'BTC 环境进入 BLOCK，本轮不进入观察。环境恢复前不跟踪任何突破结构。',
+        reasons: why,
+        warnings: [],
+        keyLevels: levels,
+        nextConditions: [{ condition: 'BTC 环境解除 BLOCK', outcome: '重新评估当前行动', level: null }],
+        history,
+        entryHeat,
+        episodeStatus: null,
+        dataFreshness: freshness,
+      };
+    }
+    // 2c) 结构性否决 / 失效：BTC_VETO（常伴随环境 BLOCK）与 STRUCTURE_VETO / FAILED / INVALIDATED
+    // 均有结构证据，仅在此分支使用"跌破失效位"表述。
     const why: ActionReason[] = [];
     why.push({
       ok: envOk,
@@ -273,7 +315,7 @@ export function deriveActionState(input: ActionInput): ActionState {
     }
     why.push({ ok: false, text: '本轮币种结构已失效' });
     if (input.currentPrice != null && input.invalidationLevel != null && input.currentPrice < input.invalidationLevel) {
-      why.push({ ok: false, text: `当前价格 ${fmtNum(input.currentPrice)} 已低于结构失效位 ${fmtNum(input.invalidationLevel)}` });
+      why.push({ ok: false, text: `当前价格 ${formatPrice(input.currentPrice)} 已低于结构失效位 ${formatPrice(input.invalidationLevel)}` });
     }
     const ageNote =
       input.episodeAgeHours != null ? `本轮突破发生于约 ${Math.round(input.episodeAgeHours)}h 前，当前结构已经失效。` : '本轮突破结构已经失效。';
@@ -287,13 +329,12 @@ export function deriveActionState(input: ActionInput): ActionState {
           : [],
       keyLevels: levels,
       nextConditions: [{ condition: '系统识别到新的 Independent Breakout Episode', outcome: '重新进入观察或跟踪（不沿用旧 episode）', level: null }],
-      history: { ...historyBase, historicalOnly: true },
+      history,
       entryHeat,
       episodeStatus: '本轮 Episode 已失效，等待新的蓄势与 Independent Breakout Episode。',
       dataFreshness: freshness,
     };
   }
-  void vetoName;
 
   const structureValid = input.breakoutConfirmed && input.heldAboveBreakoutLevel !== false;
   const chasePct = DEFAULT_CONFIG.thresholds.chaseDistancePct;
@@ -323,7 +364,7 @@ export function deriveActionState(input: ActionInput): ActionState {
       keyLevels: levels,
       nextConditions: [
         { condition: '价格重新靠近突破位区域或重新建立 base', outcome: '回到可跟踪结构', level: input.breakoutLevel },
-        { condition: `4H 收盘跌破 ${fmtNum(input.invalidationLevel)}`, outcome: '本轮结构失效', level: input.invalidationLevel },
+        { condition: `4H 收盘跌破 ${formatPrice(input.invalidationLevel)}`, outcome: '本轮结构失效', level: input.invalidationLevel },
       ],
       history: { ...historyBase, historicalOnly: false },
       entryHeat,
@@ -347,9 +388,9 @@ export function deriveActionState(input: ActionInput): ActionState {
       warnings: ['回踩观察不构成交易信号；Follow-through 仍在验证中。'],
       keyLevels: levels,
       nextConditions: [
-        { condition: `守住 ${fmtNum(input.breakoutLevel)} 附近`, outcome: '回踩结构保持有效', level: input.breakoutLevel },
-        { condition: `4H 收盘跌破 ${fmtNum(input.invalidationLevel)}`, outcome: '本轮结构失效', level: input.invalidationLevel },
-        { condition: `重新突破 ${fmtNum(input.nextResistance)}`, outcome: '进入新的结构观察阶段', level: input.nextResistance },
+        { condition: `守住 ${formatPrice(input.breakoutLevel)} 附近`, outcome: '回踩结构保持有效', level: input.breakoutLevel },
+        { condition: `4H 收盘跌破 ${formatPrice(input.invalidationLevel)}`, outcome: '本轮结构失效', level: input.invalidationLevel },
+        { condition: `重新突破 ${formatPrice(input.nextResistance)}`, outcome: '进入新的结构观察阶段', level: input.nextResistance },
       ],
       history: { ...historyBase, historicalOnly: false },
       entryHeat,
@@ -381,7 +422,7 @@ export function deriveActionState(input: ActionInput): ActionState {
       keyLevels: levels,
       nextConditions: [
         { condition: '后续 24–48H 站稳突破位', outcome: 'Follow-through 升级', level: input.breakoutLevel },
-        { condition: `4H 收盘跌破 ${fmtNum(input.invalidationLevel)}`, outcome: '本轮结构失效', level: input.invalidationLevel },
+        { condition: `4H 收盘跌破 ${formatPrice(input.invalidationLevel)}`, outcome: '本轮结构失效', level: input.invalidationLevel },
       ],
       history: { ...historyBase, historicalOnly: false },
       entryHeat,
@@ -409,7 +450,7 @@ export function deriveActionState(input: ActionInput): ActionState {
       ],
       keyLevels: levels,
       nextConditions: [
-        { condition: `4H 收盘突破 ${fmtNum(input.nextResistance)}`, outcome: '进入突破跟踪', level: input.nextResistance },
+        { condition: `4H 收盘突破 ${formatPrice(input.nextResistance)}`, outcome: '进入突破跟踪', level: input.nextResistance },
         { condition: '蓄势结构消散', outcome: '移出观察', level: null },
       ],
       history: { ...historyBase, historicalOnly: false },

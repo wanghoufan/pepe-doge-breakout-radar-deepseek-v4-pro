@@ -22,7 +22,9 @@ import type { Candle } from '../types';
 /* Episode 状态                                                        */
 /* ------------------------------------------------------------------ */
 
-/** IDLE → BASE → BREAKOUT_TRIGGERED → ACTIVE_BREAKOUT → RESET → IDLE */
+/** IDLE → BASE → BREAKOUT_TRIGGERED → ACTIVE_BREAKOUT → RESET → IDLE
+ * 注：Builder 只处理已收盘 K 线，episode 在 start trigger 收盘时直接进入 ACTIVE_BREAKOUT；
+ * BREAKOUT_TRIGGERED 为保留态（供未来盘中未收盘试探使用），当前不产生。 */
 export type EpisodeState = 'IDLE' | 'BASE' | 'BREAKOUT_TRIGGERED' | 'ACTIVE_BREAKOUT' | 'RESET';
 
 export interface EpisodeTrigger {
@@ -160,7 +162,6 @@ export function updateBreakoutEpisode(
     build.open = ep;
     build.fellBelowLevel = false;
     build.startAtrAbs = startAtrAbs;
-    build.state = 'BREAKOUT_TRIGGERED';
     build.state = 'ACTIVE_BREAKOUT';
     return build.state;
   }
@@ -214,7 +215,6 @@ export function updateBreakoutEpisode(
     build.open = ep;
     build.fellBelowLevel = false;
     build.startAtrAbs = startAtrAbs;
-    build.state = 'BREAKOUT_TRIGGERED';
     build.state = 'ACTIVE_BREAKOUT';
   } else {
     open.triggers.push({ ts: sig.ts, index: sig.index, close: sig.close });

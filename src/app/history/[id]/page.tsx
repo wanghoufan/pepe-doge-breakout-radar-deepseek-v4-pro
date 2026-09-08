@@ -104,7 +104,7 @@ export default async function HistoryDetailPage({
             <Metric label="突破延迟" value={event.breakoutDelayHours == null ? '—' : event.breakoutDelayHours.toFixed(0) + ' h'} />
             <Metric label="突破位" value={formatPrice(event.breakoutLevel)} />
             <Metric label="突破收盘" value={formatPrice(event.breakoutClose)} />
-            <Metric label="突破距离" value={formatPct(event.breakoutDistancePct)} />
+            <Metric label="突破当根超越幅度" value={formatPct(event.breakoutDistancePct)} />
             <Metric label="突破量比" value={event.breakoutVolRatio == null ? '—' : formatRatio(event.breakoutVolRatio, 1)} />
             <Metric label="突破后 24h 量比" value={event.followThrough24hVolRatio == null ? '—' : formatRatio(event.followThrough24hVolRatio, 1)} />
             <Metric label="突破后 48h 量比" value={event.followThrough48hVolRatio == null ? '—' : formatRatio(event.followThrough48hVolRatio, 1)} />

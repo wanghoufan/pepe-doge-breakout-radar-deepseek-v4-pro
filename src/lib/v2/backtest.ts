@@ -344,6 +344,9 @@ export function buildEpisodeFeatureRows(input: FeatureBuildInput): EpisodeFeatur
     if (btcDd == null) riskUnknown = true;
     else if (btcDd < -5) riskPoints += 10;
 
+    // trigger 时刻的结构 invalidated 传 false（硬编码）：回测在 trigger 时刻本就不该知道
+    // 未来是否跌破失效位，故 STRUCTURE_VETO 在此永不触发；M4 相对 M3 的实际增量
+    // 仅剩 BTC_VETO / DATA_VETO。解读 M4 时必须如实说明，不得暗示含结构失效过滤。
     const veto = upTo.length
       ? evaluateHardVeto(upTo, btcEnv, false, t).kind
       : 'DATA_VETO';

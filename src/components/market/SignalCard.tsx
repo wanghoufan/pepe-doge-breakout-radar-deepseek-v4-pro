@@ -102,11 +102,11 @@ export function SignalCard({
                 {historicalOnly ? '本轮历史突破评分（仅用于复盘）' : '分层评分'}
               </div>
               <ScoreLine label="Setup · 蓄势" score={signal.setup} color={meta.themecolor} tooltip={SETUP_COPY.tooltip} />
-              <ScoreLine label="Trigger · 突破结构完整度" score={signal.trigger} color="#8AB4F8" tooltip={TRIGGER_COPY.tooltip} />
+              <ScoreLine label="Trigger · 突破结构完整度" score={signal.trigger} color='var(--btc)' tooltip={TRIGGER_COPY.tooltip} />
               <ScoreLine
                 label="Follow-through · 跟随"
                 score={signal.followThrough}
-                color="#4FC3F7"
+                color='var(--radar)'
                 tooltip={FOLLOW_THROUGH_COPY.tooltip}
                 gradeText={action.history.followThroughText}
               />
@@ -202,7 +202,7 @@ function ScoreLine({
 
 /** Entry Heat（原 Risk）：追高/过热风险，不代表整笔交易亏损风险。 */
 function EntryHeatLine({ value, band }: { value: number | null; band: '低' | '中' | '高' | '未知' }) {
-  const color = band === '高' ? '#fb5e6e' : band === '中' ? '#f5a623' : band === '低' ? '#3ddc84' : undefined;
+  const color = band === '高' ? 'var(--bear)' : band === '中' ? 'var(--warn)' : band === '低' ? 'var(--bull)' : undefined;
   return (
     <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-1.5">
       <span className="text-xs text-muted-foreground" title={ENTRY_HEAT_COPY.tooltip}>

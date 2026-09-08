@@ -54,7 +54,7 @@ interface FundingResp {
 
 interface OverviewResp {
   ok: boolean;
-  status: 'live' | 'partial' | 'unavailable';
+  status: 'live' | 'unavailable';
   generatedAt: number;
   summary: string;
   error: string | null;
@@ -204,9 +204,9 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
             </div>
             <div className={cn('grid grid-cols-2 gap-2 sm:grid-cols-4', action.history.historicalOnly && 'opacity-50 grayscale')}>
               <ScoreBox label="Setup 蓄势" value={signal.setup.value} status={signal.setup.status} color={meta.themecolor} tooltip={SETUP_COPY.tooltip} />
-              <ScoreBox label="Trigger 突破结构" value={signal.trigger.value} status={signal.trigger.status} color="#8AB4F8" tooltip={TRIGGER_COPY.tooltip} />
-              <ScoreBox label="Follow 跟随" value={signal.followThrough.value} status={signal.followThrough.status} color="#4FC3F7" tooltip={FOLLOW_THROUGH_COPY.tooltip} displayValue={action.history.followThroughText} />
-              <ScoreBox label="Entry Heat 追高/过热" value={action.entryHeat.value} status={action.entryHeat.value != null ? 'COMPUTED' : 'DATA_UNAVAILABLE'} color="#fb5e6e" tooltip={ENTRY_HEAT_COPY.tooltip} displayValue={action.entryHeat.value != null ? `${action.entryHeat.value} · ${action.entryHeat.band}` : undefined} />
+              <ScoreBox label="Trigger 突破结构" value={signal.trigger.value} status={signal.trigger.status} color='var(--btc)' tooltip={TRIGGER_COPY.tooltip} />
+              <ScoreBox label="Follow 跟随" value={signal.followThrough.value} status={signal.followThrough.status} color='var(--radar)' tooltip={FOLLOW_THROUGH_COPY.tooltip} displayValue={action.history.followThroughText} />
+              <ScoreBox label="Entry Heat 追高/过热" value={action.entryHeat.value} status={action.entryHeat.value != null ? 'COMPUTED' : 'DATA_UNAVAILABLE'} color='var(--bear)' tooltip={ENTRY_HEAT_COPY.tooltip} displayValue={action.entryHeat.value != null ? `${action.entryHeat.value} · ${action.entryHeat.band}` : undefined} />
             </div>
             {action.history.historicalOnly && (
               <p className="text-[11px] text-muted-foreground">本轮历史突破评分，仅用于复盘。</p>

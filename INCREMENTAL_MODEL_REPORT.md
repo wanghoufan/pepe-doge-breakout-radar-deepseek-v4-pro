@@ -23,7 +23,9 @@
 - **M1（量比）**：无增量。 test P 与 B1 一致（0.32/0.42/0.20），ROC-AUC 0.48–0.61。
 - **M2（Env+Setup+Trigger）**：无增量。test P 与 B1 一致或更差，ROC-AUC 0.44–0.63。
 - **M3（Risk）/ M4（Hard Veto）**：本数据集上 veto 几乎不触发（M3=M4；fold-1 例外，
-  P 反而 0.32→0.28）。无增量。
+  P 反而 0.32→0.28）。无增量。另如实说明：回测在 trigger 时刻传 `invalidated=false`
+  （当时不可能知道未来是否失效），故 STRUCTURE_VETO 在 M4 中永不触发；
+  M4 相对 M3 的实际增量仅为 BTC_VETO / DATA_VETO，不含结构失效过滤。
 - **M5（Follow-through 管理）**：唯一正向信号。3 个 folds 的 test P：0.58 / 0.71 / 0.25
  （vs B1：0.32 / 0.43 / 0.20），recall 代价：0.78 / 0.83 / 0.40，信号减半（~2/月）。
   但每 fold 信号仅 7–12 个，fold-3 弱市同样失效——**列为候选方向，需未来 holdout 验证，不下结论**。

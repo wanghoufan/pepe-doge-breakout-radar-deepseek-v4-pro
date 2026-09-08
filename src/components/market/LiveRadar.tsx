@@ -22,7 +22,7 @@ interface SourceDiagLike {
 
 interface OverviewResp {
   ok: boolean;
-  status: 'live' | 'partial' | 'unavailable';
+  status: 'live' | 'unavailable';
   generatedAt: number;
   summary: string;
   error: string | null;

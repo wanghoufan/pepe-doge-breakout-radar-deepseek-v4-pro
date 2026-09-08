@@ -139,7 +139,7 @@ export const STATE_META: Record<StateCode, { label: string; short: string; descr
   NO_SETUP: { label: '无蓄势', short: '无蓄势', description: '尚无突破前蓄势结构' },
   BUILDING_SETUP: { label: '蓄势形成中', short: '蓄势', description: '缩量缩波初现，蓄势尚未充分' },
   NEAR_BREAKOUT: { label: '临界突破', short: '临界', description: '接近阻力，蓄势就绪，等待 4H 收盘确认' },
-  BREAKOUT_CONFIRMED: { label: '突破确认', short: '确认', description: '4H 收盘突破 rolling 阻力' },
+  BREAKOUT_CONFIRMED: { label: '突破确认', short: '确认', description: '4H 收盘突破本轮突破位' },
   FOLLOW_THROUGH_PENDING: { label: '等待跟随', short: '跟随待定', description: '突破刚成立，突破后数据尚未攒够' },
   HEALTHY_BREAKOUT: { label: '健康突破', short: '健康', description: '突破后站稳，量能与相对强度延续' },
   RETESTING: { label: '回踩确认', short: '回踩', description: '价格回踩突破位，观察是否守住' },

@@ -46,7 +46,7 @@ export interface FundingDiag extends Omit<SourceDiag, 'provider'> {
 }
 
 export interface MarketOverview {
-  status: 'live' | 'partial' | 'unavailable';
+  status: 'live' | 'unavailable';
   generatedAt: number;
   error?: string;
   errors: string[];

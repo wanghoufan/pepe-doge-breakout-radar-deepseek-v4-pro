@@ -149,7 +149,7 @@ export default function MethodologyPage() {
         <h1 className="text-xl font-semibold">方法论与证据规则</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           雷达的判断流程：先看环境闸门，再看蓄势（Setup），4H 收盘确认突破（Trigger）后进入跟随观察（Follow-through），
-          全程由风险分与硬否决独立把关，失效即退出。
+          全程由 Entry Heat（追高/过热风险）与硬否决独立把关，失效即退出。
         </p>
       </header>
 

@@ -551,7 +551,7 @@ export function analyzeAssetV2(
     const tr: Cond[] = [
       {
         key: 'closeBreakout',
-        label: '4H 收盘突破 rolling 阻力',
+        label: '4H 收盘突破本轮突破位',
         met: true,
         unknown: false,
         detail: `收盘 ${post.breakout!.close.toFixed(8)} > 阻力 ${post.breakout!.level.toFixed(8)}`,
@@ -727,7 +727,10 @@ export function analyzeAssetV2(
     10,
   );
   const riskScore = Math.round(Math.max(0, Math.min(100, riskVal)));
-  const riskLayered: LayeredScore = { value: riskScore, status: 'COMPUTED' };
+  // 资金费率缺失时不过度自信：拥挤度不可判，Entry Heat 显示"未知"而非"低"。
+  // （分值口径不变，仅状态诚实化；riskFactors 照常收集进 missingFields。）
+  const riskLayered: LayeredScore =
+    fundingAvgPct == null ? { value: null, status: 'DATA_UNAVAILABLE' } : { value: riskScore, status: 'COMPUTED' };
 
   // ---------------- 状态机 ----------------
   const failedBreakout = breakoutConfirmed && post.heldAboveBreakoutLevel === false;

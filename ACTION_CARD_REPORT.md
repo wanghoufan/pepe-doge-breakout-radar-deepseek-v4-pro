@@ -60,15 +60,15 @@ DATA_BLOCKED（⚫数据不足，暂停判断）/ NO_ACTION（⚪暂无行动）
 
 ## 8. Quant Logic Changes
 **本轮未修改底层量化策略。** 唯一参数类新增是展示分档
-（Entry Heat 高≥70/中≥40、Follow-through HEALTHY≥60/WEAK≥35），均为 display-only，
+（Entry Heat 高≥70/中≥40、Follow-through HEALTHY≥60、其余为 WEAK），均为 display-only，
 只决定文案颜色与状态词，不参与任何交易判定与回测，已在源码注释中声明。
 
 ## 9. Screenshot（真实浏览器验证，ORCA computer-use + Chrome）
-- `ACTION_CARD_HOME.png`：首页实拍（OKX 在线 live 数据）。PEPE **🔴当前淘汰**
+- `docs/qa/ACTION_CARD_HOME.png`：首页实拍（OKX 在线 live 数据）。PEPE **🔴当前淘汰**
  （"408h 前……已经失效"，现价 3.6510e-6 / 本轮突破位 4.0970e-6 / 结构失效位 3.6463e-6 /
   当前下一压力 3.8790e-6），DOGE **🔵回踩重点观察**（现价 0.0913 / 本轮突破位 0.0900 /
   结构失效位 0.0896 / 当前下一压力 0.0953）——与 §29 验收场景逐字一致。
-- `ACTION_CARD_LEVELS.png`：信息层级实拍。PEPE 历史评分区灰化
+- `docs/qa/ACTION_CARD_LEVELS.png`：信息层级实拍。PEPE 历史评分区灰化
   （Setup 100 / Trigger 100 / Follow-through FAILED·55 / Entry Heat 0/100·低 +
   "本轮历史突破评分，仅用于复盘"），STRUCTURE_VETO 横幅紧随其后；
   DOGE 显示 Setup 65 / Trigger 突破结构完整度 60 / HEALTHY·100 / Entry Heat 0/100·低、
@@ -85,3 +85,26 @@ DATA_BLOCKED（⚫数据不足，暂停判断）/ NO_ACTION（⚪暂无行动）
 - M1–M4 尚未证明具有样本外增量，M5 尚待新的 holdout 验证。
 - OVERHEATED/WEAK 等展示分档未经回测，不得解读为预测信号。
 - 当前沙箱无实时数据，线上需在 PRODUCTION_DATA_VALIDATED 后复验 ActionCard 的 live 路径。
+
+## 11. 审查整改（docs/review/CODE_REVIEW.md §7 + docs/qa/BUGS.md）
+本轮查收独立审查与 QA 台账后整改如下（`4d7c724` 之后，未改任何策略阈值/权重）：
+- §2.1（Medium，合入前置）：REJECT 文案按否决种类分支——DATA_VETO 走"数据不足以判定结构"分支；
+  环境 BLOCK（无失效态）走"环境禁止跟踪"分支；仅结构性否决/失效态保留"跌破失效位"表述。
+  新增 action.test.ts TEST 16/17/18（BTC_VETO 无突破 / env BLOCK 无突破 / DATA_VETO）。
+- BUG-001：条件清单 `4H 收盘突破 rolling 阻力` → `4H 收盘突破本轮突破位`
+  （`engine.ts` + `config.ts` STATE_META 描述同步）；历史详情页"突破距离"→"突破当根超越幅度"。
+- BUG-002：方法论导语"风险分"→ Entry Heat。
+- BUG-003：报告 §8 WEAK 口径订正为"HEALTHY≥60、其余为 WEAK（display-only）"，与实现一致。
+- §7.2.3：删除 `fmtNum`，价格文案统一走 `formatPrice`（与 KeyPrice 区同口径），
+  新增 TEST 19（浮点伪影回归 + 双轨一致性断言）。
+- §2.3：删除 `episode.ts` 两处 `BREAKOUT_TRIGGERED` 死赋值（保留态语义注释）；
+  funding 缺失时 Entry Heat 显示"未知"而非"低"（`engine.ts`，分值口径不变）；
+  `backtest.ts` 注释 + 本报告集注明 M4 实际增量仅 BTC/DATA veto；
+  删除 `status` 中的死类型 `'partial'`（3 处类型声明，行为不变）；
+  删除零引用的 V1 死代码 `src/lib/analysis.ts`（15 行再导出垫片）。
+- STYLE-DEBT：SignalCard/AssetDetail 硬编码 hex 全部映射为 token
+ （Trigger→`--btc`、Follow→`--radar`、Heat 高/中/低→`--bear/--warn/--bull`）。
+- §7.2.4：两张截图移入 `docs/qa/`，报告引用同步。
+- 未动事项（需所有者裁决，非本轮权限）：§2.2 AGENTS.md 约束字面冲突（研究层 normal/标签/回测指标
+  vs"不设对照窗口/不输出胜率"）维持现状，报告中的 precision/successRate 未进任何信号 UI；
+  QA INFO-002（`==` 边界）/INFO-003（`heldAbove=null` 处理）维持现状，含义已在 QA 清单备注。

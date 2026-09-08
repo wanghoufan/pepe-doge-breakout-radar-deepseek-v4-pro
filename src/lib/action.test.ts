@@ -267,3 +267,66 @@ test('TEST 15：Action Mapping 不依赖未来 Outcome Label', () => {
   const a2 = deriveActionState(base({ state: 'RETESTING', breakoutConfirmed: true, heldAboveBreakoutLevel: true, breakoutLevel: 1 }));
   assert.deepEqual(a1, a2);
 });
+
+test('TEST 16：BTC_VETO + 无突破价位 → REJECT，但不断言跌破失效位', () => {
+  const a = deriveActionState(
+    base({
+      environmentGate: 'BLOCK',
+      hardVetoKind: 'BTC_VETO',
+      hardVetoReason: 'BTC 24h 回撤触发硬破位阈值',
+      state: 'MARKET_BLOCKED',
+      breakoutConfirmed: false,
+      breakoutLevel: null,
+      invalidationLevel: null,
+    }),
+  );
+  assert.equal(a.code, 'REJECT');
+  assert.ok(a.summary.includes('BLOCK'), '环境分支文案应点名 BLOCK');
+  assert.ok(!a.summary.includes('跌破'), '无价位证据时不得断言跌破');
+  assert.ok(a.reasons.some((r) => r.text.includes('BTC_VETO')));
+  assert.ok(a.reasons.every((r) => !r.text.includes('结构已失效')));
+});
+
+test('TEST 17：env BLOCK + BUILDING_SETUP（无否决无突破）→ REJECT 环境分支', () => {
+  const a = deriveActionState(base({ environmentGate: 'BLOCK', state: 'BUILDING_SETUP', setupScore: 80 }));
+  assert.equal(a.code, 'REJECT');
+  assert.ok(!a.summary.includes('跌破'));
+  assert.ok(a.nextConditions[0].condition.includes('解除 BLOCK'));
+});
+
+test('TEST 18：DATA_VETO → REJECT 数据分支（不断言跌破）', () => {
+  const a = deriveActionState(
+    base({
+      hardVetoKind: 'DATA_VETO',
+      hardVetoReason: '已收盘 K 线不足（5 根，需 ≥ 43）',
+      state: 'MARKET_BLOCKED',
+    }),
+  );
+  assert.equal(a.code, 'REJECT');
+  assert.ok(a.summary.includes('数据不足'));
+  assert.ok(!a.summary.includes('跌破'));
+  assert.ok(a.nextConditions[0].condition.includes('补齐'));
+});
+
+test('TEST 19：价格文案与 formatPrice 同口径（无浮点伪影、无双轨）', async () => {
+  const { formatPrice } = await import('./format');
+  const a = deriveActionState(
+    base({
+      state: 'RETESTING',
+      breakoutConfirmed: true,
+      breakoutLevel: 0.09,
+      invalidationLevel: 0.08957259999999999,
+      nextResistance: 0.09529,
+      currentPrice: 0.0907,
+      currentDistancePct: 0.78,
+      heldAboveBreakoutLevel: true,
+      followThroughStatus: 'COMPUTED',
+      followThroughValue: 100,
+    }),
+  );
+  const texts = a.nextConditions.map((n) => n.condition).join(' | ');
+  assert.ok(!texts.includes('9999'), '不得出现浮点伪影');
+  assert.ok(texts.includes(formatPrice(0.08957259999999999)), '失效位文案与 formatPrice 一致');
+  assert.ok(texts.includes(`守住 ${formatPrice(0.09)} 附近`), '突破位文案与 KeyPrice 区一致');
+  assert.ok(texts.includes(formatPrice(0.09529)));
+});

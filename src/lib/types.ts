@@ -157,7 +157,7 @@ export interface EnvironmentState {
 /* ------------------------------------------------------------------ */
 
 export interface KeyLevels {
-  /** 当前 rolling 阻力（此前 N 根最高价）。 */
+  /** 当前下一压力（此前 N 根最高价，rolling）。 */
   resistance: number | null;
   /** 最近一次已确认突破的突破位（未突破时为 null）。 */
   breakoutLevel: number | null;

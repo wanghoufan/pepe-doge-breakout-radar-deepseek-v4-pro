@@ -40,7 +40,7 @@ export interface BreakoutSignal {
   level: number;
   /** 突破 K 线收盘价。 */
   close: number;
-  /** (close / level - 1) * 100，突破距离百分比。 */
+  /** (close / level - 1) * 100，突破当根超越幅度（百分比）。 */
   distancePct: number;
   /** 突破 K 线 quoteVol / 此前 N 根 quoteVol 中位数。 */
   volumeRatio: number | null;
