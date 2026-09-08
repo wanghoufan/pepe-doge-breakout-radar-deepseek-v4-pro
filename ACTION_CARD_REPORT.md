@@ -63,13 +63,23 @@ DATA_BLOCKED（⚫数据不足，暂停判断）/ NO_ACTION（⚪暂无行动）
 （Entry Heat 高≥70/中≥40、Follow-through HEALTHY≥60/WEAK≥35），均为 display-only，
 只决定文案颜色与状态词，不参与任何交易判定与回测，已在源码注释中声明。
 
-## 9. Screenshot
-- 本环境无浏览器（无 chromium/playwright），无法提供像素截图，改为等效证据：
-  ① 启动 dev server（`bash scripts/dev.sh`，port 5000，HTTP 200）后抓取首页 SSR HTML，
-  双币种卡片均实际渲染出 `⚫ 数据不足，暂停判断 + 为什么(✗ 实时信号不可用…) + 接下来观察(数据恢复…→ 重新评估）`
-  完整 markup（沙箱无外网，OKX 不可用，DATA_BLOCKED 路径端到端验证通过）；
-  ② `/methodology`、`asset/pepe`、`asset/doge` 均 200，方法论新文案服务端渲染确认；
-  ③ PEPE/DOGE 回归以 `deriveActionState` 直出 JSON 为准（见 §4/§5，可复现：`action.test.ts` TEST 11/12）。
+## 9. Screenshot（真实浏览器验证，ORCA computer-use + Chrome）
+- `ACTION_CARD_HOME.png`：首页实拍（OKX 在线 live 数据）。PEPE **🔴当前淘汰**
+ （"408h 前……已经失效"，现价 3.6510e-6 / 本轮突破位 4.0970e-6 / 结构失效位 3.6463e-6 /
+  当前下一压力 3.8790e-6），DOGE **🔵回踩重点观察**（现价 0.0913 / 本轮突破位 0.0900 /
+  结构失效位 0.0896 / 当前下一压力 0.0953）——与 §29 验收场景逐字一致。
+- `ACTION_CARD_LEVELS.png`：信息层级实拍。PEPE 历史评分区灰化
+  （Setup 100 / Trigger 100 / Follow-through FAILED·55 / Entry Heat 0/100·低 +
+  "本轮历史突破评分，仅用于复盘"），STRUCTURE_VETO 横幅紧随其后；
+  DOGE 显示 Setup 65 / Trigger 突破结构完整度 60 / HEALTHY·100 / Entry Heat 0/100·低、
+  本轮突破位 0.0900 / 突破收盘 0.0907 / 突破当根超越幅度 +0.84% / 突破量比 6.54x /
+  突破 52h 前、"跟踪 EP-DOGE-002（episode age 52h）"、三条接下来观察。
+- live 验证附带发现并已修复 1 个显示 bug：`nextConditions` 文案曾直接 `String(level)`，
+  把 `rollingHigh*0.94` 的浮点伪影（0.08957259999999999）暴露给用户；
+  已改为 6 位有效数字格式化（`action.ts: fmtNum`，纯展示修复，非策略改动），
+  action 单测 + tsc + eslint 重新全绿。
+- 注：验证用 Chrome 新标签页已保留在用户浏览器中（localhost:5000），可自行关闭；
+  dev server 已停止，需预览请跑 `bash scripts/dev.sh`。
 
 ## 10. Remaining Limitations
 - M1–M4 尚未证明具有样本外增量，M5 尚待新的 holdout 验证。

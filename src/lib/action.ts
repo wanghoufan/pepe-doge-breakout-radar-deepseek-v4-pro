@@ -152,8 +152,9 @@ export const FOLLOW_THROUGH_COPY = {
 } as const;
 
 function fmtNum(v: number | null): string {
-  if (v == null) return '—';
-  return String(v);
+  if (v == null || !Number.isFinite(v)) return '—';
+  // 去除浮点计算伪影（例如 0.08957259999999999 → 0.089573），保留 6 位有效数字。
+  return String(parseFloat(v.toPrecision(6)));
 }
 
 export type FollowThroughGrade = 'NOT_STARTED' | 'PENDING' | 'WEAK' | 'HEALTHY' | 'FAILED';
