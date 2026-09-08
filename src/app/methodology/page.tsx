@@ -5,7 +5,7 @@ import type { StateCode } from '@/lib/types';
 
 export const metadata: Metadata = {
   title: '方法论与证据规则 · PEPE/DOGE 突破雷达',
-  description: '十态状态机、分层评分（环境/蓄势/突破/跟随/风险/硬否决）与 A/B/C/D 证据分层规则说明。',
+  description: '十态状态机、分层评分（环境/蓄势/突破结构/跟随/过热/硬否决）与 A/B/C/D 证据分层规则说明。',
 };
 
 const STATE_ORDER: StateCode[] = [
@@ -31,7 +31,7 @@ const LAYERS = [
   {
     key: 'setup',
     title: 'Setup 蓄势（0–100，仅用突破前数据）',
-    desc: '币种是否正在形成突破前蓄势。严禁使用突破后量能 / 回踩 / 涨幅。',
+    desc: '币种是否正在形成突破前蓄势。严禁使用突破后量能 / 回踩 / 涨幅。Setup 只用于发现值得观察的结构，不作为独立开仓信号：在 768 个普通行情窗口中，BUILDING_SETUP 误报率约 41%、NEAR_BREAKOUT 约 30%。',
     items: Object.entries(DEFAULT_V2_WEIGHTS.setup).map(([k, w]) => {
       const label: Record<string, string> = {
         atrCompression: 'ATR 收缩',
@@ -47,8 +47,8 @@ const LAYERS = [
   },
   {
     key: 'trigger',
-    title: 'Trigger 突破（0–100，突破发生后才有）',
-    desc: '4H 收盘是否真正突破 rolling 阻力，量能 / 实体 / 相对 BTC 是否确认。未突破时显示 WAITING。',
+    title: 'Trigger 突破结构完整度（0–100，突破发生后才有）',
+    desc: '衡量已发生突破在量能、K 线结构和相对强度上的完整程度，不代表未来收益概率。未突破时显示 WAITING。',
     items: Object.entries(DEFAULT_V2_WEIGHTS.trigger).map(([k, w]) => {
       const label: Record<string, string> = {
         closeBreakout: '4H 收盘突破',
@@ -64,7 +64,7 @@ const LAYERS = [
   {
     key: 'followThrough',
     title: 'Follow-through 跟随（0–100，只用 breakoutTs 之后数据）',
-    desc: '突破后行情是否健康：站稳突破位、24h/48h 量能持续、回踩守住、相对强度延续。不足 24h 显示 PENDING。',
+    desc: '突破后行情是否健康：站稳突破位、24h/48h 量能持续、回踩守住、相对强度延续。不足 24h 显示 PENDING。Follow-through 是当前最值得继续验证的突破后管理指标，但尚未证明具有稳定的样本外预测优势。',
     items: Object.entries(DEFAULT_V2_WEIGHTS.followThrough).map(([k, w]) => {
       const label: Record<string, string> = {
         heldAbove: '站稳突破位',
@@ -78,10 +78,31 @@ const LAYERS = [
   },
   {
     key: 'risk',
-    title: 'Risk 风险（0–100，越高越危险）',
-    desc: '独立于机会分：追涨过远、短期涨幅、ATR 极端扩张、资金费率拥挤、BTC 环境风险。',
+    title: 'Entry Heat 追高 / 过热风险（0–100，越高越过热）',
+    desc: '衡量当前价格是否距离原突破位过远、短期是否过热或拥挤。它不代表这笔交易的全部风险，Hard Veto 和结构失效拥有更高优先级。',
     items: ['追涨过远', '短期涨幅', 'ATR 极端扩张', '资金费率拥挤', 'BTC 环境风险'],
   },
+];
+
+const DETECTION_VS_EDGE = [
+  {
+    title: 'Pattern Detection（已落地）',
+    desc: '时间对齐、Episode 去重、Normal Window、Walk-forward 研究闭环：市场阶段识别、蓄势观察、突破确认、Follow-through 跟踪、回踩结构观察、Hard Veto 过滤、减少盯盘范围。',
+  },
+  {
+    title: 'Predictive Edge（未证明）',
+    desc: '完整 M1–M4 在样本外尚未证明具有显著增量（ROC-AUC 约 0.5）。Follow-through Management 为候选方向，当前样本较少（每 fold 约 7–12 个信号），等待新的 holdout 验证。本站不输出胜率与开仓建议。',
+  },
+];
+
+const ACTION_STATES = [
+  { emoji: '🔴', name: '当前淘汰', desc: '硬否决 / 环境 BLOCK / 结构失效。任何高分都不能覆盖。' },
+  { emoji: '🟡', name: '加入观察', desc: '有蓄势但无有效突破。只代表值得盯，不是开仓信号。' },
+  { emoji: '🟢', name: '突破跟踪', desc: '有效 4H 收盘突破后，进入 Follow-through 观察。' },
+  { emoji: '🔵', name: '回踩重点观察', desc: '回踩本轮突破位附近且结构仍有效。' },
+  { emoji: '🟠', name: '结构有效，但已过热', desc: '结构未失效，但距突破位过远或过热，追高风险高。' },
+  { emoji: '⚫', name: '数据不足，暂停判断', desc: '停止输出候选，不沿用旧信号，给出最后有效更新时间。' },
+  { emoji: '⚪', name: '暂无行动', desc: '当前没有值得跟踪的结构。' },
 ];
 
 const EVIDENCE = [
@@ -112,8 +133,10 @@ const EVIDENCE = [
 ];
 
 const DISCLOSURES = [
-  '本工具不是投资建议或信号系统，不构成任何买卖决策依据。',
+  '本工具不是投资建议或信号系统，不构成任何买卖决策依据；不输出"建议开仓 / 买入 / 胜率"类表述。',
   '突破识别的历史回测（Precision/Recall/FPR/Success Rate/MFE/MAE）只反映样本外真实表现，不构成收益承诺。',
+  '当前系统已完成 Pattern Detection 研究闭环，但 M1–M4 尚未证明具有显著样本外增量；M5（Follow-through Management）为候选方向，等待新的 holdout 验证。',
+  'Setup 用于筛选值得观察的结构，不作为独立开仓信号：BUILDING_SETUP / NEAR_BREAKOUT 在普通行情窗口中误报率分别约 41% / 30%。',
   '所有阈值、权重均为「候选」性质，已用 walk-forward 在样本外检验，但样本量有限，仍需持续滚动更新。',
   '实时行情受数据源可用性、延迟与口径影响；数据不可用时显式标记 DATA_UNAVAILABLE，绝不冒充实时行情。',
   '资金费率跨交易所口径不同，仅作拥挤度方向性参考；Funding / Open Interest / Liquidation 等衍生品指标为增强项，不影响核心链路。',
@@ -129,6 +152,47 @@ export default function MethodologyPage() {
           全程由风险分与硬否决独立把关，失效即退出。
         </p>
       </header>
+
+      {/* 识别 vs 预测边界 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">识别能力 vs 预测能力（边界）</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {DETECTION_VS_EDGE.map((d) => (
+            <div key={d.title} className="rounded-md border border-border px-3 py-2.5">
+              <div className="text-sm font-medium">{d.title}</div>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{d.desc}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* 当前行动 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">当前行动（Action Card 由确定性映射产生）</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {ACTION_STATES.map((a) => (
+              <div key={a.name} className="flex gap-2.5 rounded-md border border-border px-3 py-2">
+                <span className="text-base" aria-hidden>
+                  {a.emoji}
+                </span>
+                <div>
+                  <div className="text-sm font-medium">{a.name}</div>
+                  <div className="text-xs text-muted-foreground">{a.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            优先级：数据不足 ＞ 硬否决 ＞ 环境 BLOCK ＞ 突破失败/结构失效 ＞ 过热 ＞ 回踩观察 ＞ 突破跟踪 ＞
+            接近阻力/蓄势观察 ＞ 暂无行动。Setup 高分只能进入观察，不能产生突破跟踪；历史突破评分在结构失效后灰化，仅用于复盘。
+          </p>
+        </CardContent>
+      </Card>
 
       {/* 状态机 */}
       <Card>

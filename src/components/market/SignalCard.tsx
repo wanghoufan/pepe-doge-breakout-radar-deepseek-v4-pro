@@ -2,8 +2,18 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StateBadge } from './StateBadge';
+import { ActionCard } from './ActionCard';
 import { ASSETS } from '@/lib/config';
 import { formatPrice, formatPct, formatTs, formatRatio } from '@/lib/format';
+import {
+  deriveActionState,
+  actionInputFromSignal,
+  ENTRY_HEAT_COPY,
+  SETUP_COPY,
+  TRIGGER_COPY,
+  FOLLOW_THROUGH_COPY,
+  type ActionInput,
+} from '@/lib/action';
 import type { AssetId, AssetSignal, LayeredScore } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -21,14 +31,22 @@ export function SignalCard({
   className,
   price,
   priceTs,
+  dataStatus,
+  staleReason,
 }: {
   asset: AssetId;
   signal: AssetSignal | null;
   className?: string;
   price?: number | null;
   priceTs?: number | null;
+  dataStatus?: ActionInput['dataStatus'];
+  staleReason?: string | null;
 }) {
   const meta = ASSETS[asset];
+  const action = deriveActionState(
+    actionInputFromSignal(signal, { asset, price: price ?? null, priceTs: priceTs ?? null, forcedStatus: dataStatus, staleReason }),
+  );
+  const historicalOnly = action.history.historicalOnly;
 
   return (
     <Card className={cn('relative overflow-hidden', className)}>
@@ -59,9 +77,12 @@ export function SignalCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {!signal ? (
+        {/* Level 1–3：当前行动（永远排在最前） */}
+        <ActionCard action={action} />
+        {!signal && (
           <div className="py-6 text-center text-sm text-muted-foreground">实时信号不可用</div>
-        ) : (
+        )}
+        {signal && (
           <>
             {signal.hardVeto.kind !== 'NONE' && (
               <div className="rounded-lg border border-bear/30 bg-bear/10 px-3 py-2 text-sm text-bear">
@@ -75,20 +96,29 @@ export function SignalCard({
               <GateBadge gate={signal.environment.gate} />
             </div>
 
-            {/* 分层评分 */}
-            <div className="space-y-1.5">
-              <ScoreLine label="Setup · 蓄势" score={signal.setup} color={meta.themecolor} />
-              <ScoreLine label="Trigger · 突破" score={signal.trigger} color="#8AB4F8" />
-              <ScoreLine label="Follow-through · 跟随" score={signal.followThrough} color="#4FC3F7" />
-              <ScoreLine label="Risk · 风险" score={signal.risk} color="#fb5e6e" invert />
+            {/* 分层评分（Level 5；失效后历史评分灰化，仅复盘） */}
+            <div className={cn('space-y-1.5', historicalOnly && 'opacity-50 grayscale')}>
+              <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                {historicalOnly ? '本轮历史突破评分（仅用于复盘）' : '分层评分'}
+              </div>
+              <ScoreLine label="Setup · 蓄势" score={signal.setup} color={meta.themecolor} tooltip={SETUP_COPY.tooltip} />
+              <ScoreLine label="Trigger · 突破结构完整度" score={signal.trigger} color="#8AB4F8" tooltip={TRIGGER_COPY.tooltip} />
+              <ScoreLine
+                label="Follow-through · 跟随"
+                score={signal.followThrough}
+                color="#4FC3F7"
+                tooltip={FOLLOW_THROUGH_COPY.tooltip}
+                gradeText={action.history.followThroughText}
+              />
+              <EntryHeatLine value={action.entryHeat.value} band={action.entryHeat.band} />
             </div>
 
-            {/* 突破信息 */}
+            {/* 突破信息（EPISODE HISTORY：本轮突破当时） */}
             {signal.breakout.confirmed && (
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <LevelRow label="突破位" value={signal.breakout.level} />
+                <LevelRow label="本轮突破位" value={signal.breakout.level} />
                 <LevelRow label="突破收盘" value={signal.breakout.close} />
-                <LevelRow label="突破距离" custom={formatPct(signal.breakout.distancePct)} value={null} />
+                <LevelRow label="突破当根超越幅度" custom={formatPct(signal.breakout.distancePct)} value={null} />
                 <LevelRow label="突破量比" custom={formatRatio(signal.breakout.volumeRatio)} value={null} />
                 {signal.breakout.ts != null && (
                   <div className="col-span-2 text-[11px] text-muted-foreground">
@@ -105,8 +135,8 @@ export function SignalCard({
 
             {/* 关键价位 */}
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <LevelRow label="rolling 阻力" value={signal.keyLevels.resistance} />
-              <LevelRow label="失效观察位" value={signal.keyLevels.invalidation} />
+              <LevelRow label="当前下一压力" value={signal.keyLevels.resistance} />
+              <LevelRow label="结构失效位" value={signal.keyLevels.invalidation} />
               <LevelRow label="EMA20" value={signal.keyLevels.ema20} />
               <LevelRow
                 label="相对 BTC"
@@ -143,25 +173,47 @@ function ScoreLine({
   label,
   score,
   color,
-  invert,
+  tooltip,
+  gradeText,
 }: {
   label: string;
   score: LayeredScore;
   color: string;
-  invert?: boolean;
+  tooltip?: string;
+  gradeText?: string;
 }) {
   const hasValue = score.status === 'COMPUTED' && score.value != null;
   const status = STATUS_LABEL[score.status];
   return (
     <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-1.5">
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-xs text-muted-foreground" title={tooltip}>
+        {label}
+      </span>
       {hasValue ? (
         <span className="tnum font-mono text-sm font-medium" style={{ color }}>
-          {score.value}
-          {invert ? <span className="ml-1 text-[10px] text-muted-foreground">/ 风险</span> : null}
+          {gradeText ?? score.value}
         </span>
       ) : (
         <span className="text-[11px] text-muted-foreground">{status}</span>
+      )}
+    </div>
+  );
+}
+
+/** Entry Heat（原 Risk）：追高/过热风险，不代表整笔交易亏损风险。 */
+function EntryHeatLine({ value, band }: { value: number | null; band: '低' | '中' | '高' | '未知' }) {
+  const color = band === '高' ? '#fb5e6e' : band === '中' ? '#f5a623' : band === '低' ? '#3ddc84' : undefined;
+  return (
+    <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-1.5">
+      <span className="text-xs text-muted-foreground" title={ENTRY_HEAT_COPY.tooltip}>
+        Entry Heat · 追高/过热
+      </span>
+      {value != null ? (
+        <span className="tnum font-mono text-sm font-medium" style={color ? { color } : undefined}>
+          {value} / 100 · {band}
+        </span>
+      ) : (
+        <span className="text-[11px] text-muted-foreground">数据不可用</span>
       )}
     </div>
   );

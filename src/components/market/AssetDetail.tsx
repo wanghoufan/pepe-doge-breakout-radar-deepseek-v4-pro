@@ -5,10 +5,19 @@ import { useApi } from '@/hooks/use-api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StateBadge } from '@/components/market/StateBadge';
+import { ActionCard } from '@/components/market/ActionCard';
 import { CandleChart } from '@/components/market/CandleChart';
 import { SourceLine, DiagBox, type DiagLike } from '@/components/market/DataStatus';
 import type { Candle, AssetSignal, Timeframe } from '@/lib/types';
 import { ASSETS } from '@/lib/config';
+import {
+  deriveActionState,
+  actionInputFromSignal,
+  ENTRY_HEAT_COPY,
+  SETUP_COPY,
+  TRIGGER_COPY,
+  FOLLOW_THROUGH_COPY,
+} from '@/lib/action';
 import { formatPrice, formatPct, formatTs, relativeTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -78,6 +87,23 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
   const signal = coin === 'PEPE' ? overviewApi.data?.data.pepe : overviewApi.data?.data.doge;
   const live = overviewApi.data?.status === 'live';
   const price = overviewApi.data?.data.prices?.[coin] ?? null;
+  const action = signal
+    ? deriveActionState(
+        actionInputFromSignal(signal, {
+          asset: coin,
+          price: price?.last ?? null,
+          priceTs: price?.ts ?? null,
+          forcedStatus: live ? 'ok' : 'stale',
+          staleReason: live ? null : '实时链路非 live，信号可能不是最新',
+        }),
+      )
+    : deriveActionState(
+        actionInputFromSignal(null, {
+          asset: coin,
+          price: price?.last ?? null,
+          priceTs: price?.ts ?? null,
+        }),
+      );
 
   const candles = candlesApi.data?.data.candles ?? [];
   const lastConfirmedTs = candlesApi.data?.data.lastConfirmedTs ?? null;
@@ -147,7 +173,10 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
         </CardContent>
       </Card>
 
-      {/* 评分（分层） */}
+      {/* 当前行动（Level 1–3，永远在最前） */}
+      <ActionCard action={action} />
+
+      {/* 评分（分层，Level 5；失效后历史评分灰化，仅复盘） */}
       {signal && (
         <Card>
           <CardContent className="space-y-3 py-5">
@@ -173,16 +202,19 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <ScoreBox label="Setup 蓄势" value={signal.setup.value} status={signal.setup.status} color={meta.themecolor} />
-              <ScoreBox label="Trigger 突破" value={signal.trigger.value} status={signal.trigger.status} color="#8AB4F8" />
-              <ScoreBox label="Follow 跟随" value={signal.followThrough.value} status={signal.followThrough.status} color="#4FC3F7" />
-              <ScoreBox label="Risk 风险" value={signal.risk.value} status={signal.risk.status} color="#fb5e6e" />
+            <div className={cn('grid grid-cols-2 gap-2 sm:grid-cols-4', action.history.historicalOnly && 'opacity-50 grayscale')}>
+              <ScoreBox label="Setup 蓄势" value={signal.setup.value} status={signal.setup.status} color={meta.themecolor} tooltip={SETUP_COPY.tooltip} />
+              <ScoreBox label="Trigger 突破结构" value={signal.trigger.value} status={signal.trigger.status} color="#8AB4F8" tooltip={TRIGGER_COPY.tooltip} />
+              <ScoreBox label="Follow 跟随" value={signal.followThrough.value} status={signal.followThrough.status} color="#4FC3F7" tooltip={FOLLOW_THROUGH_COPY.tooltip} displayValue={action.history.followThroughText} />
+              <ScoreBox label="Entry Heat 追高/过热" value={action.entryHeat.value} status={action.entryHeat.value != null ? 'COMPUTED' : 'DATA_UNAVAILABLE'} color="#fb5e6e" tooltip={ENTRY_HEAT_COPY.tooltip} displayValue={action.entryHeat.value != null ? `${action.entryHeat.value} · ${action.entryHeat.band}` : undefined} />
             </div>
+            {action.history.historicalOnly && (
+              <p className="text-[11px] text-muted-foreground">本轮历史突破评分，仅用于复盘。</p>
+            )}
             <div className="grid grid-cols-2 gap-2">
-              <Level label="rolling 阻力" value={formatPrice(signal.keyLevels.resistance)} />
-              <Level label="失效观察位" value={formatPrice(signal.keyLevels.invalidation)} />
-              <Level label="突破位" value={formatPrice(signal.keyLevels.breakoutLevel)} />
+              <Level label="当前下一压力" value={formatPrice(signal.keyLevels.resistance)} />
+              <Level label="结构失效位" value={formatPrice(signal.keyLevels.invalidation)} />
+              <Level label="本轮突破位" value={formatPrice(signal.keyLevels.breakoutLevel)} />
               <Level label="EMA20" value={formatPrice(signal.keyLevels.ema20)} />
             </div>
           </CardContent>
@@ -354,17 +386,23 @@ function ScoreBox({
   value,
   status,
   color,
+  tooltip,
+  displayValue,
 }: {
   label: string;
   value: number | null;
   status: 'COMPUTED' | 'WAITING' | 'PENDING' | 'NOT_STARTED' | 'DATA_UNAVAILABLE';
   color: string;
+  tooltip?: string;
+  displayValue?: string;
 }) {
   return (
     <div className="rounded-md bg-muted/40 px-3 py-2">
-      <div className="text-[11px] text-muted-foreground">{label}</div>
+      <div className="text-[11px] text-muted-foreground" title={tooltip}>
+        {label}
+      </div>
       <div className="tnum mt-0.5 font-mono text-lg font-semibold" style={{ color }}>
-        {status === 'COMPUTED' && value != null ? value : SCORE_STATUS_LABEL[status]}
+        {status === 'COMPUTED' && value != null ? (displayValue ?? value) : SCORE_STATUS_LABEL[status]}
       </div>
     </div>
   );
