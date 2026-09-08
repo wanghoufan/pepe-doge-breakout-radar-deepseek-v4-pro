@@ -30,7 +30,6 @@ src/
     statistics.ts     # percentile/percentileRank（分位阈值）
     indicators.ts     # 指标纯函数：EMA/ATR/量比/maxDrawdown（与历史分析脚本逐行等价，勿改算法）
     event-analysis.ts # 历史事件 EVENT_DEFS（ISO UTC）、CAMPAIGNS、computeEventMetrics（Rolling detector + MFE/MAE）
-    analysis.ts       # 再导出 V2 引擎 analyzeAssetV2（废弃单一机会分）
     state-machine.ts  # 十态状态机 determineStateV2(input)
     similarity.ts     # 特征向量 + z-score + 余弦相似度（仅突破前字段，无未来信息）
     data-store.ts     # 载入 src/data 快照：getHistoricalEvents/getHistoricalEventById/getSnapshotCandles/getSnapshotFunding/getEventCandles
@@ -49,7 +48,7 @@ src/
     similarity/page.tsx       # 相似性（历史特征空间 + 当前像谁）
     methodology/page.tsx      # 方法论：十态状态机 + 分层评分 + 证据规则
     api/                    # REST 接口（见下）
-  components/market/   # CandleChart(自绘SVG)/StateBadge(10态)/ScoreRing/SignalCard(分层)/LiveRadar/HistoryGrid/AssetDetail/SimilarityView
+  components/market/   # CandleChart(自绘SVG)/StateBadge(10态)/ScoreRing/SignalCard(分层)/LiveRadar/HistoryGrid/AssetDetail/SimilarityView/ActionCard(行动卡)/DataStatus(数据源标注）
   components/layout/   # SiteHeader/SiteFooter
   data/                # 研究快照 JSON：event-metrics.json + candles/*.json + funding/*.json（V2 已重算 21 事件）
 public/screenshots/    # 21 张原始截图，命名 P01..P11 / D01..D10
@@ -64,8 +63,8 @@ REST 接口（`app/api/**/route.ts`，前端统一相对路径调用 `/api/...`�
 | 接口 | 说明 | 降级行为 |
 |---|---|---|
 | `GET /api/market/overview` | 环境闸门 + 双币种分层信号 | 无网返回 `{ok,status:'unavailable'}` + summary |
-| `GET /api/market/candles?instId=&bar=` | K 线 | 无网回退到研究快照 `{source:'snapshot',degraded:true}` |
-| `GET /api/market/funding?coin=` | 资金费率 | 无网回退快照 |
+| `GET /api/market/candles?coin=&bar=` | K 线 | 失败返回 503 + 真实诊断（不拿快照冒充实时） |
+| `GET /api/market/funding?coin=` | 资金费率 | 失败返回 503 + 真实诊断（不拿快照冒充实时） |
 | `GET /api/history` | 21 事件列表 | 纯本地，恒可用 |
 | `GET /api/history/:id` | 事件详情+窗口数据 | 纯本地 |
 | `GET /api/similarity` | 历史特征矩阵+散点 | 纯本地 |
@@ -77,7 +76,7 @@ REST 接口（`app/api/**/route.ts`，前端统一相对路径调用 `/api/...`�
 - 预览：`preview_enable = "enabled"`，对外只暴露 5000，`.preview` 写 `expose_port = 5000`，已被 `.gitignore` 忽略。
 - 开发运行：`bash scripts/dev.sh`（`tsx watch src/server.ts`，监听 `process.env.PORT||5000`）。
 - 数据请求走服务端 `market-client`（`src/server.ts` 内自定义 server），前端不直接访问第三方接口，规避 CORS 与密钥暴露。
-- 环境无外网（OKX/Binance 被沙箱 DNS 墙为 169.254.0.2），实时数据恒 `unavailable`/`snapshot` 降级——历史模式仍完整可用；这是预期行为，不要反复确认或强行联网。
+- 环境无外网（OKX/Binance 被沙箱 DNS 墙为 169.254.0.2），实时数据恒 `unavailable`/`snapshot` 降级——历史模式仍完整可用；这是预期行为，不要反复确认或强行联网。（实测注记 2026-09-08：本机与 Vercel 生产环境均可直连交易所，`overview` 实测为 `live`；`candles`/`funding` 失败时返回 503 真实诊断而非快照回退。沙箱假设仅在对应环境成立。）
 - **生产部署**：Vercel 项目 `pepe-doge-breakout-radar`（地域 `hnd1` 东京）已绑定 GitHub repo `wanghoufan/pepe-doge-breakout-radar-deepseek-v4-pro`，push 到 `main` 自动触发生产部署；生产地址 https://pepe-doge-breakout-radar.vercel.app（`vercel.json` 指定 `framework: nextjs`、`installCommand: pnpm install --no-frozen-lockfile`、`buildCommand: pnpm next build`）。
 
 ## 用户偏好与长期约束
