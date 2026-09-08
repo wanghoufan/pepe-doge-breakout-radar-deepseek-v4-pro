@@ -5,7 +5,6 @@ import { useApi } from '@/hooks/use-api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { StateBadge } from '@/components/market/StateBadge';
-import { ScoreRing } from '@/components/market/ScoreRing';
 import { CandleChart } from '@/components/market/CandleChart';
 import { SourceLine, DiagBox, type DiagLike } from '@/components/market/DataStatus';
 import type { Candle, AssetSignal, Timeframe } from '@/lib/types';
@@ -148,35 +147,46 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
         </CardContent>
       </Card>
 
-      {/* 评分 */}
+      {/* 评分（分层） */}
       {signal && (
-        <div className="grid gap-4 sm:grid-cols-[1fr_1fr_2fr]">
-          <Card>
-            <CardContent className="flex items-center justify-center py-5">
-              <ScoreRing value={signal.opportunityScore} label="机会评分" color={meta.themecolor} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center justify-center py-5">
-              <ScoreRing value={signal.riskScore} label="风险评分" color="#fb5e6e" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="py-5">
-              {signal.hardVeto && (
-                <div className="mb-3 rounded-md border border-bear/30 bg-bear/10 px-3 py-2 text-xs text-bear">
-                  ⚠ 硬否决：{signal.hardVetoReason}
+        <Card>
+          <CardContent className="space-y-3 py-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">BTC 环境</span>
+                <span
+                  className={cn(
+                    'rounded-full border px-2.5 py-0.5 text-xs font-medium',
+                    signal.environment.gate === 'ALLOW'
+                      ? 'border-radar/30 bg-radar/10 text-radar'
+                      : signal.environment.gate === 'CAUTION'
+                        ? 'border-warn/30 bg-warn/10 text-warn'
+                        : 'border-bear/30 bg-bear/10 text-bear',
+                  )}
+                >
+                  {signal.environment.gate}
+                </span>
+              </div>
+              {signal.hardVeto.kind !== 'NONE' && (
+                <div className="rounded-md border border-bear/30 bg-bear/10 px-3 py-1.5 text-xs text-bear">
+                  ⚠ 硬否决（{signal.hardVeto.kind}）：{signal.hardVeto.reason}
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-2">
-                <Level label="结构阻力" value={formatPrice(signal.keyLevels.resistance)} />
-                <Level label="失效观察位" value={formatPrice(signal.keyLevels.invalidation)} />
-                <Level label="回踩下沿" value={formatPrice(signal.keyLevels.pullbackLower)} />
-                <Level label="EMA20" value={formatPrice(signal.keyLevels.ema20)} />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <ScoreBox label="Setup 蓄势" value={signal.setup.value} status={signal.setup.status} color={meta.themecolor} />
+              <ScoreBox label="Trigger 突破" value={signal.trigger.value} status={signal.trigger.status} color="#8AB4F8" />
+              <ScoreBox label="Follow 跟随" value={signal.followThrough.value} status={signal.followThrough.status} color="#4FC3F7" />
+              <ScoreBox label="Risk 风险" value={signal.risk.value} status={signal.risk.status} color="#fb5e6e" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Level label="rolling 阻力" value={formatPrice(signal.keyLevels.resistance)} />
+              <Level label="失效观察位" value={formatPrice(signal.keyLevels.invalidation)} />
+              <Level label="突破位" value={formatPrice(signal.keyLevels.breakoutLevel)} />
+              <Level label="EMA20" value={formatPrice(signal.keyLevels.ema20)} />
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {!signal && !overviewApi.loading && (
@@ -293,18 +303,24 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
           <CardContent>
             {signal ? (
               <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                {signal.metConditions.slice(0, 8).map((c) => (
-                  <div key={c.key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span className="text-radar">✓</span>
-                    <span className="truncate">{c.label}</span>
-                  </div>
-                ))}
-                {signal.missingConditions.slice(0, 4).map((c) => (
-                  <div key={c.key} className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
-                    <span className="text-muted-foreground">·</span>
-                    <span className="truncate">{c.label}</span>
-                  </div>
-                ))}
+                {[...signal.setupConditions, ...signal.triggerConditions, ...signal.followThroughConditions]
+                  .filter((c) => c.met)
+                  .slice(0, 8)
+                  .map((c) => (
+                    <div key={c.key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="text-radar">✓</span>
+                      <span className="truncate">{c.label}</span>
+                    </div>
+                  ))}
+                {[...signal.setupConditions, ...signal.triggerConditions, ...signal.followThroughConditions]
+                  .filter((c) => !c.met && !c.unknown)
+                  .slice(0, 4)
+                  .map((c) => (
+                    <div key={c.key} className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                      <span className="text-muted-foreground">○</span>
+                      <span className="truncate">{c.label}</span>
+                    </div>
+                  ))}
               </div>
             ) : (
               <div className="py-4 text-center text-sm text-muted-foreground">实时信号不可用</div>
@@ -321,6 +337,35 @@ function Level({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="tnum font-mono text-xs text-foreground">{value}</span>
+    </div>
+  );
+}
+
+const SCORE_STATUS_LABEL: Record<'COMPUTED' | 'WAITING' | 'PENDING' | 'NOT_STARTED' | 'DATA_UNAVAILABLE', string> = {
+  COMPUTED: '',
+  WAITING: '等待触发',
+  PENDING: '待补齐',
+  NOT_STARTED: '未开始',
+  DATA_UNAVAILABLE: '不可用',
+};
+
+function ScoreBox({
+  label,
+  value,
+  status,
+  color,
+}: {
+  label: string;
+  value: number | null;
+  status: 'COMPUTED' | 'WAITING' | 'PENDING' | 'NOT_STARTED' | 'DATA_UNAVAILABLE';
+  color: string;
+}) {
+  return (
+    <div className="rounded-md bg-muted/40 px-3 py-2">
+      <div className="text-[11px] text-muted-foreground">{label}</div>
+      <div className="tnum mt-0.5 font-mono text-lg font-semibold" style={{ color }}>
+        {status === 'COMPUTED' && value != null ? value : SCORE_STATUS_LABEL[status]}
+      </div>
     </div>
   );
 }

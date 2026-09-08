@@ -40,9 +40,10 @@ function toCandles(rows: RawCandle[]): Candle[] {
   }));
 }
 
-interface RawMetric extends Omit<EventMetrics, 'coin'> {
+type RawMetric = Omit<EventMetrics, 'coin' | 'outcome'> & {
   coin: 'PEPE' | 'DOGE';
-}
+  outcome?: 'success' | 'failure' | 'normal' | null;
+};
 
 const campaignByEvent = new Map<string, { campaignId: string; label: string }>();
 for (const c of CAMPAIGNS) {
@@ -65,6 +66,7 @@ export function getHistoricalEvents(): HistoricalEvent[] {
     const c = campaignByEvent.get(m.id) ?? null;
     return {
       ...m,
+      outcome: m.outcome ?? null,
       campaignId: c?.campaignId ?? null,
       campaignLabel: c?.label ?? null,
       screenshot: `/screenshots/${m.id}.png`,

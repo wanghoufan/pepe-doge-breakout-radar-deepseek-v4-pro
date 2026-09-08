@@ -1,15 +1,17 @@
 /**
- * 市场概览编排（仅服务端）。拉取 BTC / PEPE / DOGE 三方数据，
- * 计算相对强度互馈，再对 PEPE、DOGE 分别跑实时雷达引擎。
+ * 市场概览编排（V2，仅服务端）。
  *
- * 降级口径（关键）：
- * - OKX（价格 + K 线）与 Binance（资金费率）**完全独立**请求、独立判定成败。
- *   Binance 失败时，OKX 的实时价格与 K 线照常生效，整体状态仍为 live。
- * - 判定突破只吃「已收盘」的 4H K 线；盘中未收盘那根只作为展示用的 intraday 数据。
+ * 拉取 BTC / PEPE / DOGE 三方数据，计算 ratio-based 相对强度互馈，
+ * 再对 PEPE、DOGE 分别跑 V2 分层引擎（analyzeAssetV2）。
+ *
+ * 降级口径（不变）：
+ * - OKX（价格 + K 线）与 Binance（资金费率）完全独立请求、独立判定成败。
+ * - 判定突破只吃「已收盘」4H K 线；盘中未收盘那根只作展示 / INTRABAR 提示。
  * - 任何失败都产出结构化诊断，绝不用历史快照或模拟值冒充实时行情。
  */
-import { analyzeAsset, computeFeatures } from './analysis';
+import { analyzeAssetV2, computeBtcEnvironment } from './v2/engine';
 import { DEFAULT_CONFIG } from './config';
+import { relativeReturn } from './relative-strength';
 import { getFunding, getOkxCandles, getOkxTickers, type FetchDiag } from './market-client';
 import type { AssetSignal, Candle } from './types';
 
@@ -34,6 +36,8 @@ export interface BtcEnv {
   return7dPct: number | null;
   maxDrawdown24hPct: number | null;
   closeAboveEma100: boolean | null;
+  hardBreakdown: boolean;
+  trend: 'up' | 'down' | 'range' | 'unknown';
   source: 'okx' | 'unavailable';
 }
 
@@ -49,15 +53,10 @@ export interface MarketOverview {
   btc: BtcEnv;
   pepe: AssetSignal | null;
   doge: AssetSignal | null;
-  /** 最后一根已收盘 K 线时间（判定口径）。 */
   lastCandleTs: number | null;
-  /** 各标的最后一根已收盘 K 线时间。 */
   lastConfirmedTs: { PEPE: number | null; DOGE: number | null; BTC: number | null };
-  /** 各标的盘中未收盘 K 线（仅展示，不参与判定）。 */
   intraday: { PEPE: Candle | null; DOGE: Candle | null; BTC: Candle | null };
-  /** 实时价格与时间戳。 */
   prices: Record<'PEPE' | 'DOGE' | 'BTC', { last: number; ts: number } | null>;
-  /** 逐数据源诊断，供 /api/market/health 与页面排障。 */
   sources: {
     okxCandles: Record<'PEPE' | 'DOGE' | 'BTC', SourceDiag>;
     okxTickers: SourceDiag;
@@ -133,7 +132,6 @@ export async function getMarketOverview(): Promise<MarketOverview> {
   if (!dogeRes.ok) errors.push(`OKX DOGE K 线失败：${dogeRes.error}（${dogeRes.diag.errorDetail}）`);
   if (!tickerRes.ok) errors.push(`OKX 最新价失败：${tickerRes.error}（${tickerRes.diag.errorDetail}）`);
 
-  // 资金费率是独立维度：失败只标记降级，不影响价格与 K 线可用性。
   const pepeFunding = pepeFundRes.ok ? pepeFundRes.data.points : [];
   const dogeFunding = dogeFundRes.ok ? dogeFundRes.data.points : [];
   const fundingProvider = pepeFundRes.ok
@@ -141,8 +139,8 @@ export async function getMarketOverview(): Promise<MarketOverview> {
     : dogeFundRes.ok
       ? dogeFundRes.data.provider
       : null;
-  if (!pepeFundRes.ok) errors.push(`PEPE 资金费率不可用（Binance 与 OKX 均失败）：${pepeFundRes.diag.errorDetail}`);
-  if (!dogeFundRes.ok) errors.push(`DOGE 资金费率不可用（Binance 与 OKX 均失败）：${dogeFundRes.diag.errorDetail}`);
+  if (!pepeFundRes.ok) errors.push(`PEPE 资金费率不可用：${pepeFundRes.diag.errorDetail}`);
+  if (!dogeFundRes.ok) errors.push(`DOGE 资金费率不可用：${dogeFundRes.diag.errorDetail}`);
 
   const prices: MarketOverview['prices'] = {
     PEPE: tickerRes.ok ? (tickerRes.data.PEPE ?? null) : null,
@@ -161,7 +159,6 @@ export async function getMarketOverview(): Promise<MarketOverview> {
     BTC: btcRes.ok ? btcRes.data.intradayCandle : null,
   };
 
-  // 只用已收盘 K 线跑引擎（未收盘那根不构成突破确认）。
   const btcBars = btcRes.ok ? btcRes.data.confirmedCandles : [];
   const pepeBars = pepeRes.ok ? pepeRes.data.confirmedCandles : [];
   const dogeBars = dogeRes.ok ? dogeRes.data.confirmedCandles : [];
@@ -181,30 +178,45 @@ export async function getMarketOverview(): Promise<MarketOverview> {
     return7dPct: null,
     maxDrawdown24hPct: null,
     closeAboveEma100: null,
+    hardBreakdown: false,
+    trend: 'unknown',
     source: prices.BTC ? 'okx' : 'unavailable',
   };
   let pepe: AssetSignal | null = null;
   let doge: AssetSignal | null = null;
 
   if (canAnalyze) {
-    const pepeFeat = computeFeatures(pepeBars, btcBars, pepeFunding, DEFAULT_CONFIG.thresholds);
-    const dogeFeat = computeFeatures(dogeBars, btcBars, dogeFunding, DEFAULT_CONFIG.thresholds);
+    // ratio-based 相对强度互馈（统一时间口径）
+    const pepeRel = relativeReturn(pepeBars, btcBars, DEFAULT_CONFIG.thresholds.relativeStrengthWindow);
+    const dogeRel = relativeReturn(dogeBars, btcBars, DEFAULT_CONFIG.thresholds.relativeStrengthWindow);
 
-    pepe = analyzeAsset('PEPE', pepeBars, btcBars, pepeFunding, {
-      peerRelativeStrengthPct: dogeFeat.feature.relativeStrength,
-    });
-    doge = analyzeAsset('DOGE', dogeBars, btcBars, dogeFunding, {
-      peerRelativeStrengthPct: pepeFeat.feature.relativeStrength,
-    });
+    pepe = analyzeAssetV2(
+      'PEPE',
+      pepeBars,
+      pepeRes.ok ? pepeRes.data.intradayCandle : null,
+      btcBars,
+      pepeFunding,
+      { peerRelativeStrengthPct: dogeRel },
+    );
+    doge = analyzeAssetV2(
+      'DOGE',
+      dogeBars,
+      dogeRes.ok ? dogeRes.data.intradayCandle : null,
+      btcBars,
+      dogeFunding,
+      { peerRelativeStrengthPct: pepeRel },
+    );
 
-    const btcRaw = pepeFeat.raw;
+    const btcFields = computeBtcEnvironment(btcBars, DEFAULT_CONFIG.thresholds);
     btc = {
       symbol: 'BTC-USDT-SWAP',
       price: prices.BTC?.last ?? null,
       priceTs: prices.BTC?.ts ?? null,
-      return7dPct: btcRaw.btcReturnPct,
-      maxDrawdown24hPct: btcRaw.btc24hDD,
-      closeAboveEma100: btcRaw.btcCloseAboveEma100,
+      return7dPct: btcFields.return7dPct,
+      maxDrawdown24hPct: btcFields.maxDrawdown24hPct,
+      closeAboveEma100: btcFields.closeAboveEma100,
+      hardBreakdown: btcFields.hardBreakdown,
+      trend: btcFields.trend,
       source: 'okx',
     };
   }
@@ -232,15 +244,15 @@ export async function getMarketOverview(): Promise<MarketOverview> {
 
 export function btcRiskLabel(btc: BtcEnv): string {
   if (btc.maxDrawdown24hPct == null) return '数据不可用';
-  if (btc.maxDrawdown24hPct <= DEFAULT_CONFIG.thresholds.btcMaxDrawdownPct) return '环境风险：BTC 急跌';
+  if (btc.hardBreakdown) return '环境风险：BTC 硬破位';
   if (btc.closeAboveEma100 === false) return '环境偏弱：BTC 跌破 EMA100';
-  if (btc.return7dPct != null && btc.return7dPct > 0) return '环境偏暖：BTC 上行';
+  if (btc.trend === 'up') return '环境偏暖：BTC 上行';
   return '环境中性：BTC 区间震荡';
 }
 
 export function envSummary(btc: BtcEnv, pepe: AssetSignal | null, doge: AssetSignal | null): string {
   const risk = btcRiskLabel(btc);
-  const stateOf = (s: AssetSignal | null) => (s ? `${s.stateLabel}(${s.opportunityScore})` : '—');
+  const stateOf = (s: AssetSignal | null) => (s ? `${s.stateLabel}` : '—');
   return `${risk}；PEPE ${stateOf(pepe)}，DOGE ${stateOf(doge)}；BTC 24h 回撤 ${fmt(btc.maxDrawdown24hPct)}`;
 }
 

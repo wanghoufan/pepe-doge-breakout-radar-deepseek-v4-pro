@@ -7,7 +7,7 @@
  * 相似度 = 1 / (1 + z-score 欧氏距离)，对缺失维度做成对删除（双方都有值才参与）。
  */
 import type { EventMetrics } from './event-analysis';
-import type { FeatureVector } from './types';
+import type { FeatureVectorV2 } from './types';
 
 export interface SimilarityFeatureDef {
   key: keyof EventMetrics | 'preAtrPct';
@@ -31,11 +31,11 @@ export function eventFeatureVector(event: EventMetrics): (number | null)[] {
 }
 
 /** 当前实时状态的同维度特征（用于「当前像谁」）。 */
-export function currentFeatureVector(feature: FeatureVector): (number | null)[] {
+export function currentFeatureVector(feature: FeatureVectorV2): (number | null)[] {
   return [
     feature.compressionRatio,
-    feature.preVolumeRatio,
-    feature.preReturnPct,
+    feature.volumeContractionRatio,
+    feature.preReturn7dPct ?? null,
     null, // 实时无完整启动前 ATR，暂不参与该维度（成对删除）
     feature.fundingAvgPct,
   ];

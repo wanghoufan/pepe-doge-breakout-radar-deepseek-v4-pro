@@ -1,10 +1,13 @@
 /**
- * 数据模型与共享类型定义。
+ * 数据模型与共享类型定义（V2）。
  *
  * 约定：
  * - 时间内部统一使用 UTC 毫秒时间戳（epoch ms）。
  * - 界面默认以 Asia/Shanghai（UTC+8）展示，并明确标注时区。
  * - 所有第三方数据都必须携带 value / source / timestamp / freshness / status。
+ * - 评分拆分为独立层：Environment / Setup / Trigger / Follow-through / Risk / Hard Veto。
+ * - 数据缺失用显式状态表示（COMPUTED / WAITING / PENDING / NOT_STARTED / DATA_UNAVAILABLE），
+ *   绝不把「无数据」当成 score = 0。
  */
 
 /** K 线（已完成或进行中）。`confirm` 由数据源决定：completed 表示已收盘。 */
@@ -32,7 +35,6 @@ export interface DataPoint<T> {
   timestamp: number | null;
   freshness: Freshness;
   status: DataStatus;
-  /** 人类可读的补充说明（为什么是这个状态 / 缺失了什么） */
   note?: string;
 }
 
@@ -43,88 +45,199 @@ export interface AssetMeta {
   instId: string;
   name: string;
   symbol: string;
-  /** 资金费率 Binance 符号（跨交易所参考），仅用于拥挤度方向性判断 */
   fundingBinanceSymbol: string;
   themecolor: string;
 }
 
 export type Timeframe = '1H' | '4H' | '1D';
 
+/* ------------------------------------------------------------------ */
+/* 环境闸门                                                             */
+/* ------------------------------------------------------------------ */
+
+/** Environment Gate：整体市场是否允许关注山寨币突破。 */
+export type EnvironmentGate = 'ALLOW' | 'CAUTION' | 'BLOCK';
+
+/* ------------------------------------------------------------------ */
+/* 硬否决                                                               */
+/* ------------------------------------------------------------------ */
+
+export type HardVetoKind = 'NONE' | 'BTC_VETO' | 'STRUCTURE_VETO' | 'DATA_VETO' | 'LIQUIDITY_VETO';
+
+/* ------------------------------------------------------------------ */
+/* 状态机（10 态）                                                      */
+/* ------------------------------------------------------------------ */
+
 export type StateCode =
-  | 'forbidden'
-  | 'accumulating'
-  | 'near_breakout'
-  | 'breakout_confirmed'
-  | 'awaiting_pullback'
-  | 'invalidated';
+  | 'MARKET_BLOCKED'
+  | 'NO_SETUP'
+  | 'BUILDING_SETUP'
+  | 'NEAR_BREAKOUT'
+  | 'BREAKOUT_CONFIRMED'
+  | 'FOLLOW_THROUGH_PENDING'
+  | 'HEALTHY_BREAKOUT'
+  | 'RETESTING'
+  | 'FAILED_BREAKOUT'
+  | 'INVALIDATED';
+
+/* ------------------------------------------------------------------ */
+/* 分数状态（区分 null / pending / unavailable）                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * COMPUTED  : 有数据，value ∈ [0,100]。
+ * WAITING    : 前提尚未发生（如 Trigger 在突破前 = WAITING FOR TRIGGER）。
+ * PENDING    : 已发生但数据尚未攒够（如突破 < 24h 的 Follow-through）。
+ * NOT_STARTED: 阶段未开始（如突破前 Follow-through = NOT_STARTED）。
+ * DATA_UNAVAILABLE : API 拉取失败 / 数据缺失。
+ */
+export type ScoreStatus = 'COMPUTED' | 'WAITING' | 'PENDING' | 'NOT_STARTED' | 'DATA_UNAVAILABLE';
+
+export interface LayeredScore {
+  value: number | null;
+  status: ScoreStatus;
+  note?: string;
+}
+
+/* ------------------------------------------------------------------ */
+/* 突破信息                                                             */
+/* ------------------------------------------------------------------ */
+
+export interface BreakoutInfo {
+  /** 突破 K 线的 open ts（breakoutTs）。 */
+  ts: number | null;
+  /** 突破位（rollingHigh，此前 N 根最高价）。 */
+  level: number | null;
+  /** 突破 K 线收盘价（breakoutClose）。 */
+  close: number | null;
+  /** (close / level - 1) * 100。 */
+  distancePct: number | null;
+  /** 突破 K 线量比（quoteVol / 此前 N 根中位数）。 */
+  volumeRatio: number | null;
+  /** 是否已在已收盘 K 线上确认（close > rollingHigh）。 */
+  confirmed: boolean;
+  /** 盘中是否出现 high > rollingHigh 但尚未收盘（INTRABAR）。 */
+  intradayAttempt: boolean;
+  /** 突破后已收盘的 4H K 线根数。 */
+  barsSinceBreakout: number | null;
+  /** 突破后经过的小时数（按已收盘 K 线估算）。 */
+  hoursSinceBreakout: number | null;
+}
+
+/* ------------------------------------------------------------------ */
+/* 环境状态                                                             */
+/* ------------------------------------------------------------------ */
+
+export interface EnvironmentState {
+  gate: EnvironmentGate;
+  btcTrend: 'up' | 'down' | 'range' | 'unknown';
+  btcReturn7dPct: number | null;
+  btcCloseAboveEma100: boolean | null;
+  btc24hMaxDrawdownPct: number | null;
+  btcHardBreakdown: boolean;
+  /** 板块广度：兄弟币种相对 BTC 的强度（%，ratio-based）。 */
+  memeBreadthPct: number | null;
+  reasons: string[];
+}
+
+/* ------------------------------------------------------------------ */
+/* 关键价位                                                             */
+/* ------------------------------------------------------------------ */
 
 export interface KeyLevels {
-  /** 结构阻力（此前 7 日最高价） */
+  /** 当前 rolling 阻力（此前 N 根最高价）。 */
   resistance: number | null;
-  /** 突破位（等于 resistance，突破后成为观察支撑） */
+  /** 最近一次已确认突破的突破位（未突破时为 null）。 */
   breakoutLevel: number | null;
-  /** 回踩观察区上沿 */
-  pullbackUpper: number | null;
-  /** 回踩观察区下沿 */
-  pullbackLower: number | null;
-  /** 硬失效价 */
+  /** 硬失效价。 */
   invalidation: number | null;
-  /** EMA20 */
+  /** EMA20。 */
   ema20: number | null;
 }
+
+/* ------------------------------------------------------------------ */
+/* 条件项                                                               */
+/* ------------------------------------------------------------------ */
 
 export interface ConditionItem {
   key: string;
   label: string;
   met: boolean;
-  /** 该条件是否因数据缺失而不可判定（true 表示未知，不能当通过） */
+  /** true 表示因数据缺失不可判定（不能当通过，也不能当不通过）。 */
   unknown: boolean;
   detail: string;
   weight?: number;
 }
 
+/* ------------------------------------------------------------------ */
+/* 特征向量（point-in-time）                                            */
+/* ------------------------------------------------------------------ */
+
+export interface FeatureVectorV2 {
+  /* ---- Setup（只允许突破前数据） ---- */
+  compressionRatio: number | null;
+  atrPercentile60d: number | null;
+  volumeContractionRatio: number | null;
+  volumePercentile60d: number | null;
+  distanceToResistancePct: number | null;
+  baseDurationCandles: number | null;
+  higherLow: boolean | null;
+  relativeStrengthPct: number | null;
+  relativeStrengthPercentile: number | null;
+  relativeStrengthSlope: number | null;
+  aboveEma20: boolean | null;
+  emaBullishStack: boolean | null;
+  preReturn7dPct: number | null;
+  /* ---- Trigger（突破发生后才计算） ---- */
+  breakoutVolRatio: number | null;
+  breakoutBodyStrength: number | null;
+  breakoutCloseLocation: number | null;
+  breakoutRelBtcPct: number | null;
+  /* ---- Follow-through（只允许 breakoutTs 之后数据） ---- */
+  followThrough24hVolRatio: number | null;
+  followThrough48hVolRatio: number | null;
+  heldAboveBreakoutLevel: boolean | null;
+  retestedBreakoutLevel: boolean | null;
+  /* ---- Risk ---- */
+  fundingAvgPct: number | null;
+  fundingMaxPct: number | null;
+  emaDistancePct: number | null;
+  atrExpansionRatio: number | null;
+}
+
+/* ------------------------------------------------------------------ */
+/* 最终信号                                                             */
+/* ------------------------------------------------------------------ */
+
 export interface AssetSignal {
   asset: AssetId;
   state: StateCode;
   stateLabel: string;
-  opportunityScore: number;
-  riskScore: number;
-  hardVeto: boolean;
-  hardVetoReason: string | null;
-  reasons: string[];
-  metConditions: ConditionItem[];
-  missingConditions: ConditionItem[];
+
+  environment: EnvironmentState;
+
+  setup: LayeredScore;
+  setupConditions: ConditionItem[];
+
+  trigger: LayeredScore;
+  triggerConditions: ConditionItem[];
+
+  followThrough: LayeredScore;
+  followThroughConditions: ConditionItem[];
+
+  risk: LayeredScore;
+  riskFactors: ConditionItem[];
+
+  hardVeto: { kind: HardVetoKind; reason: string | null };
+
+  breakout: BreakoutInfo;
+  keyLevels: KeyLevels;
+  features: FeatureVectorV2;
+
   dataQuality: {
     missingFields: string[];
     staleFields: string[];
     degraded: boolean;
     summary: string;
   };
-  keyLevels: KeyLevels;
-  features: FeatureVector;
-}
-
-export interface FeatureVector {
-  /** 最近 3 日 ATR / 前 7 日 ATR（compressionRatio，越小越收缩） */
-  compressionRatio: number | null;
-  /** 最近 3 日均量 / 前 7 日均量 */
-  preVolumeRatio: number | null;
-  /** 启动前 7 日收益 % */
-  preReturnPct: number | null;
-  /** 4H 收盘是否站上此前 7 日最高价 */
-  abovePriorHigh: boolean | null;
-  /** 突破 K 线量比（相对前 7 日单根 median quoteVol） */
-  breakoutVolRatio: number | null;
-  /** 启动后 24~48h 均量 / 前 7 日中位量 */
-  persistentVolumeRatio: number | null;
-  /** 币/BTC 相对强度（价格比，归一化后涨跌幅 %） */
-  relativeStrength: number | null;
-  /** 价格是否高于 EMA20 */
-  aboveEma20: boolean | null;
-  /** EMA 多头排列 EMA20>50>100 */
-  emaBullishStack: boolean | null;
-  /** BTC 同期窗口收益 % */
-  btcReturnPct: number | null;
-  /** 资金费率平均 %（换算成百分比） */
-  fundingAvgPct: number | null;
 }

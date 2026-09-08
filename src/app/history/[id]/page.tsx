@@ -10,7 +10,7 @@ import {
   getEventBtcCandles,
 } from '@/lib/data-store';
 import { ASSETS } from '@/lib/config';
-import { formatDate, formatTs, formatPct, formatRatio } from '@/lib/format';
+import { formatDate, formatTs, formatPct, formatRatio, formatPrice } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,17 +97,47 @@ export default async function HistoryDetailPage({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">启动后结果（事件窗口）</CardTitle>
+            <CardTitle className="text-sm font-medium">突破与跟随（V2 · 从 breakoutTs 起算）</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-x-4 gap-y-3">
             <Metric label="突破时点" value={event.breakoutTs ? formatTs(event.breakoutTs) : '未发生'} />
             <Metric label="突破延迟" value={event.breakoutDelayHours == null ? '—' : event.breakoutDelayHours.toFixed(0) + ' h'} />
+            <Metric label="突破位" value={formatPrice(event.breakoutLevel)} />
+            <Metric label="突破收盘" value={formatPrice(event.breakoutClose)} />
+            <Metric label="突破距离" value={formatPct(event.breakoutDistancePct)} />
             <Metric label="突破量比" value={event.breakoutVolRatio == null ? '—' : formatRatio(event.breakoutVolRatio, 1)} />
-            <Metric label="24~48h 持续量比" value={formatRatio(event.first48AvgVolRatio, 1)} />
-            <Metric label="峰值涨幅" value={formatPct(event.coinPeakReturn, 1)} />
-            <Metric label="峰值回撤" value={formatPct(event.eventMaxDrawdown, 1)} />
-            <Metric label="相对 BTC 超额" value={formatPct(event.relativePeakVsBtc, 1)} />
+            <Metric label="突破后 24h 量比" value={event.followThrough24hVolRatio == null ? '—' : formatRatio(event.followThrough24hVolRatio, 1)} />
+            <Metric label="突破后 48h 量比" value={event.followThrough48hVolRatio == null ? '—' : formatRatio(event.followThrough48hVolRatio, 1)} />
+            <Metric label="相对 BTC 24h" value={formatPct(event.relativeReturn24h)} />
+            <Metric label="相对 BTC 72h" value={formatPct(event.relativeReturn72h)} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">MFE / MAE（突破后表现，相对突破收盘）</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
+            <Metric label="MFE 24h" value={formatPct(event.mfe24h, 1)} />
+            <Metric label="MAE 24h" value={formatPct(event.mae24h, 1)} />
+            <Metric label="MFE 48h" value={formatPct(event.mfe48h, 1)} />
+            <Metric label="MAE 48h" value={formatPct(event.mae48h, 1)} />
+            <Metric label="MFE 72h" value={formatPct(event.mfe72h, 1)} />
+            <Metric label="MAE 72h" value={formatPct(event.mae72h, 1)} />
+            <Metric label="MFE 7D" value={formatPct(event.mfe7d, 1)} />
+            <Metric label="MAE 7D" value={formatPct(event.mae7d, 1)} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">事后完整波段（Hindsight，仅描述，非策略收益）</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-x-4 gap-y-3">
+            <Metric label="区间最低 → 最高" value={formatPct(event.coinPeakReturn, 1)} />
+            <Metric label="区间峰值回撤" value={formatPct(event.eventMaxDrawdown, 1)} />
             <Metric label="事件期费率过热占比" value={event.eventFundingOverheatRate == null ? '—' : (event.eventFundingOverheatRate * 100).toFixed(0) + '%'} />
+            <Metric label="事后标签" value={event.outcome ? (event.outcome === 'success' ? '成功' : event.outcome === 'failure' ? '失败' : '普通') : '未标注'} />
           </CardContent>
         </Card>
       </div>
@@ -121,7 +151,7 @@ export default async function HistoryDetailPage({
           <Metric label="BTC 同期收益" value={formatPct(event.btcReturnPct)} />
           <Metric label="BTC 峰值涨幅" value={formatPct(event.btcPeakReturnPct)} />
           <Metric label="BTC 峰值回撤" value={formatPct(event.btcMaxDrawdown)} />
-          <Metric label="币种峰值 / BTC 峰值" value={formatPct(event.relativePeakVsBtc)} />
+          <Metric label="币相对 BTC 72h" value={formatPct(event.relativeReturn72h)} />
         </CardContent>
       </Card>
 
