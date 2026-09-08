@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { StateBadge } from '@/components/market/StateBadge';
 import { ActionCard } from '@/components/market/ActionCard';
 import { CandleChart } from '@/components/market/CandleChart';
-import { SourceLine, DiagBox, type DiagLike } from '@/components/market/DataStatus';
+import { SourceLine, DiagBox, SourceFreshnessRow, type DiagLike } from '@/components/market/DataStatus';
 import type { Candle, AssetSignal, Timeframe } from '@/lib/types';
+import type { FeedFreshness } from '@/lib/freshness';
 import { ASSETS } from '@/lib/config';
 import {
   deriveActionState,
@@ -60,6 +61,8 @@ interface OverviewResp {
   error: string | null;
   errors?: string[];
   fundingProvider?: 'binance' | 'okx' | null;
+  freshness?: FeedFreshness | null;
+  fundingTs?: Record<'PEPE' | 'DOGE', number | null> | null;
   data: {
     pepe: AssetSignal | null;
     doge: AssetSignal | null;
@@ -87,14 +90,18 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
   const signal = coin === 'PEPE' ? overviewApi.data?.data.pepe : overviewApi.data?.data.doge;
   const live = overviewApi.data?.status === 'live';
   const price = overviewApi.data?.data.prices?.[coin] ?? null;
+  // P0-1 三态：优先用服务端 freshness；缺字段时按 live 回退（此前非 live 硬编码 'stale'，现按 unavailable 回退）。
+  const feedStatus = overviewApi.data?.freshness?.status ?? (overviewApi.data ? (live ? 'ok' : 'unavailable') : 'unavailable');
+  const feedReason =
+    overviewApi.data?.freshness?.reason ?? (live ? null : '实时链路非 live，信号可能不是最新');
   const action = signal
     ? deriveActionState(
         actionInputFromSignal(signal, {
           asset: coin,
           price: price?.last ?? null,
           priceTs: price?.ts ?? null,
-          forcedStatus: live ? 'ok' : 'stale',
-          staleReason: live ? null : '实时链路非 live，信号可能不是最新',
+          forcedStatus: feedStatus,
+          staleReason: feedReason,
         }),
       )
     : deriveActionState(
@@ -170,6 +177,14 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
           {candlesApi.data && !candlesApi.data.ok ? (
             <DiagBox diag={candlesApi.data.diag} title={candlesApi.data.message ?? 'K 线实时接口不可用'} />
           ) : null}
+          {overviewApi.data && (
+            <SourceFreshnessRow
+              generatedAt={overviewApi.data.generatedAt}
+              lastConfirmedTs={overviewApi.data.data.lastConfirmedTs}
+              prices={overviewApi.data.data.prices}
+              fundingTs={overviewApi.data.fundingTs ?? null}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -211,7 +226,7 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
             {action.history.historicalOnly && (
               <p className="text-[11px] text-muted-foreground">本轮历史突破评分，仅用于复盘。</p>
             )}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Level label="当前下一压力" value={formatPrice(signal.keyLevels.resistance)} />
               <Level label="结构失效位" value={formatPrice(signal.keyLevels.invalidation)} />
               <Level label="本轮突破位" value={formatPrice(signal.keyLevels.breakoutLevel)} />
@@ -366,9 +381,9 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
 
 function Level({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="tnum font-mono text-xs text-foreground">{value}</span>
+    <div className="flex min-w-0 items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-1.5">
+      <span className="min-w-0 text-xs text-muted-foreground">{label}</span>
+      <span className="tnum max-w-[60%] shrink-0 break-all text-right font-mono text-xs text-foreground">{value}</span>
     </div>
   );
 }

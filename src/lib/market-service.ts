@@ -11,6 +11,7 @@
  */
 import { analyzeAssetV2, computeBtcEnvironment } from './v2/engine';
 import { DEFAULT_CONFIG } from './config';
+import { deriveOverviewFreshness, type FeedFreshness } from './freshness';
 import { relativeReturn } from './relative-strength';
 import { getFunding, getOkxCandles, getOkxTickers, type FetchDiag } from './market-client';
 import type { AssetSignal, Candle } from './types';
@@ -63,6 +64,10 @@ export interface MarketOverview {
     funding: Record<'PEPE' | 'DOGE', FundingDiag>;
   };
   fundingProvider: 'binance' | 'okx' | null;
+  /** P0-1 三态新鲜度（ok/stale/unavailable）+ 最后有效更新；仅可靠性门控，不参与评分。 */
+  freshness: FeedFreshness;
+  /** P0-3 各币种资金费率末点 ts（无则 null，用于来源新鲜度行）。 */
+  fundingTs: Record<'PEPE' | 'DOGE', number | null>;
 }
 
 const fmt = (v: number | null) => (v == null ? '—' : `${v.toFixed(2)}%`);
@@ -225,6 +230,23 @@ export async function getMarketOverview(): Promise<MarketOverview> {
   const okxOk = btcRes.ok && pepeRes.ok && dogeRes.ok;
   const status: MarketOverview['status'] = !okxOk || !canAnalyze ? 'unavailable' : 'live';
 
+  // P0-1/P0-3：三态新鲜度 + funding 末点 ts（加性字段，不改变 live/unavailable 判定）。
+  const fundingTs: MarketOverview['fundingTs'] = {
+    PEPE: pepeFunding.length ? pepeFunding[pepeFunding.length - 1].ts : null,
+    DOGE: dogeFunding.length ? dogeFunding[dogeFunding.length - 1].ts : null,
+  };
+  const freshness = deriveOverviewFreshness({
+    okxOk,
+    canAnalyze,
+    lastConfirmedTs,
+    priceTs: {
+      PEPE: prices.PEPE?.ts ?? null,
+      DOGE: prices.DOGE?.ts ?? null,
+      BTC: prices.BTC?.ts ?? null,
+    },
+    now: generatedAt,
+  });
+
   return {
     status,
     generatedAt,
@@ -239,6 +261,8 @@ export async function getMarketOverview(): Promise<MarketOverview> {
     prices,
     sources: { okxCandles: candleDiag, okxTickers: tickerDiag, funding: fundingDiag },
     fundingProvider,
+    freshness,
+    fundingTs,
   };
 }
 

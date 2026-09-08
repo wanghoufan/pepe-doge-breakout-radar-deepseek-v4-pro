@@ -19,6 +19,8 @@ export async function GET() {
     error: overview.error ?? null,
     errors: overview.errors,
     fundingProvider: overview.fundingProvider,
+    freshness: overview.freshness,
+    fundingTs: overview.fundingTs,
     data: {
       btc: overview.btc,
       pepe: overview.pepe,

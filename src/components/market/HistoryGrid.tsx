@@ -65,7 +65,7 @@ export function HistoryGrid({ events }: { events: HistoricalEvent[] }) {
           return (
             <Link key={e.id} href={`/history/${e.id}`} className="group">
               <Card className="h-full transition-colors group-hover:border-radar/40">
-                <div className="flex items-center justify-between px-6 pt-5">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-6 pt-5">
                   <div className="flex items-center gap-2">
                     <span className="tnum font-mono text-base font-semibold text-foreground">{e.id}</span>
                     <Badge variant="outline" style={{ color: meta.themecolor, borderColor: `${meta.themecolor}55` }}>

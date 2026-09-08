@@ -54,8 +54,8 @@ export function SignalCard({
         className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-[0.12] blur-2xl"
         style={{ background: meta.themecolor }}
       />
-      <CardHeader className="flex-row items-start justify-between space-y-0">
-        <div>
+      <CardHeader className="flex-row items-start justify-between gap-2 space-y-0">
+        <div className="min-w-0 flex-1">
           <CardTitle className="flex items-center gap-2 text-lg">
             <span className="font-mono" style={{ color: meta.themecolor }}>
               {meta.symbol}
@@ -73,7 +73,11 @@ export function SignalCard({
           )}
           {signal && <p className="mt-0.5 text-[11px] text-muted-foreground">判定口径 · 4H 已收盘 K 线</p>}
         </div>
-        {signal && <StateBadge state={signal.state} />}
+        {signal && (
+          <div className="shrink-0">
+            <StateBadge state={signal.state} />
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -113,9 +117,9 @@ export function SignalCard({
               <EntryHeatLine value={action.entryHeat.value} band={action.entryHeat.band} />
             </div>
 
-            {/* 突破信息（EPISODE HISTORY：本轮突破当时） */}
+            {/* 突破信息（EPISODE HISTORY：本轮突破当时，手机端单列防溢出） */}
             {signal.breakout.confirmed && (
-              <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
                 <LevelRow label="本轮突破位" value={signal.breakout.level} />
                 <LevelRow label="突破收盘" value={signal.breakout.close} />
                 <LevelRow label="突破当根超越幅度" custom={formatPct(signal.breakout.distancePct)} value={null} />
@@ -133,8 +137,8 @@ export function SignalCard({
               </div>
             )}
 
-            {/* 关键价位 */}
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            {/* 关键价位（手机端单列防溢出） */}
+            <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
               <LevelRow label="当前下一压力" value={signal.keyLevels.resistance} />
               <LevelRow label="结构失效位" value={signal.keyLevels.invalidation} />
               <LevelRow label="EMA20" value={signal.keyLevels.ema20} />
@@ -150,7 +154,13 @@ export function SignalCard({
 
             {signal.dataQuality.degraded && (
               <div className="text-[11px] text-warn">
-                部分条件因数据缺失不可判定：{signal.dataQuality.missingFields.join('、')}
+                {signal.dataQuality.missingFields.length
+                  ? `部分条件因数据缺失不可判定：${signal.dataQuality.missingFields.join('、')}`
+                  : null}
+                {signal.dataQuality.missingFields.length && signal.dataQuality.staleFields.length ? '；' : null}
+                {signal.dataQuality.staleFields.length
+                  ? `部分数据已过期：${signal.dataQuality.staleFields.join('、')}`
+                  : null}
               </div>
             )}
           </>
@@ -235,15 +245,15 @@ function ConditionList({ signal }: { signal: AssetSignal }) {
     <div className="space-y-1.5">
       <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">条件清单</div>
       {met.slice(0, 5).map((c) => (
-        <div key={c.key} className="flex gap-1.5 text-xs text-muted-foreground">
-          <span className="text-radar">✓</span>
-          <span className="truncate">{c.label}</span>
+        <div key={c.key} className="flex min-w-0 gap-1.5 text-xs text-muted-foreground">
+          <span className="shrink-0 text-radar">✓</span>
+          <span className="min-w-0 flex-1 truncate">{c.label}</span>
         </div>
       ))}
       {missing.slice(0, 4).map((c) => (
-        <div key={c.key} className="flex gap-1.5 text-xs text-muted-foreground/70">
-          <span className="text-muted-foreground">○</span>
-          <span className="truncate">{c.label}</span>
+        <div key={c.key} className="flex min-w-0 gap-1.5 text-xs text-muted-foreground/70">
+          <span className="shrink-0 text-muted-foreground">○</span>
+          <span className="min-w-0 flex-1 truncate">{c.label}</span>
         </div>
       ))}
     </div>
@@ -252,9 +262,9 @@ function ConditionList({ signal }: { signal: AssetSignal }) {
 
 function LevelRow({ label, value, custom }: { label: string; value: number | null; custom?: string }) {
   return (
-    <div className="flex items-center justify-between rounded-md bg-muted/50 px-2.5 py-1.5">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="tnum font-mono text-foreground">{custom ?? formatPrice(value)}</span>
+    <div className="flex min-w-0 items-center justify-between gap-2 rounded-md bg-muted/50 px-2.5 py-1.5">
+      <span className="min-w-0 text-muted-foreground">{label}</span>
+      <span className="tnum max-w-[60%] shrink-0 break-all text-right font-mono text-foreground">{custom ?? formatPrice(value)}</span>
     </div>
   );
 }

@@ -11,6 +11,7 @@
  */
 import { avg, emaSeries, meanTrueRangePct, median, pct } from '../indicators';
 import { percentileRank } from '../statistics';
+import { assessFundingFreshness, type FeedStatus } from '../freshness';
 import { detectBreakout, getRollingHigh, DEFAULT_BREAKOUT_CONFIG, type BreakoutSignal } from '../breakout';
 import { getRealtimeEpisodeMembership, FROZEN_EPISODE_RULE } from './episode';
 import { relativeReturn, relativeStrengthPercentile, relativeStrengthSlope } from '../relative-strength';
@@ -81,6 +82,24 @@ function norm100(score: number, available: number): number | null {
 
 function fmtPct(v: number | null, digits = 2): string {
   return v == null ? '数据缺失' : `${v >= 0 ? '+' : ''}${v.toFixed(digits)}%`;
+}
+
+/**
+ * P0-2 缺数据禁示低风险（纯函数，可单测）：
+ * 任一 Risk 条件 unknown，或资金费率缺失/过期，均不得输出低分，必须 DATA_UNAVAILABLE。
+ * 分值口径不变，仅状态诚实化；不触阈值/权重/M5。
+ */
+export function resolveRiskLayer(
+  riskScore: number,
+  riskFactors: { unknown: boolean }[],
+  fundingFreshness: FeedStatus,
+  fundingAvgPct: number | null,
+): LayeredScore {
+  const hasUnknown = riskFactors.some((c) => c.unknown);
+  if (fundingAvgPct == null || hasUnknown || fundingFreshness !== 'ok') {
+    return { value: null, status: 'DATA_UNAVAILABLE' };
+  }
+  return { value: riskScore, status: 'COMPUTED' };
 }
 
 /**
@@ -727,10 +746,10 @@ export function analyzeAssetV2(
     10,
   );
   const riskScore = Math.round(Math.max(0, Math.min(100, riskVal)));
-  // 资金费率缺失时不过度自信：拥挤度不可判，Entry Heat 显示"未知"而非"低"。
+  // P0-1/P0-2：资金费率过期视为 stale；任一 Risk 条件缺失一律 DATA_UNAVAILABLE，禁示低风险。
   // （分值口径不变，仅状态诚实化；riskFactors 照常收集进 missingFields。）
-  const riskLayered: LayeredScore =
-    fundingAvgPct == null ? { value: null, status: 'DATA_UNAVAILABLE' } : { value: riskScore, status: 'COMPUTED' };
+  const fundingFreshness = assessFundingFreshness(funding, last.ts);
+  const riskLayered: LayeredScore = resolveRiskLayer(riskScore, riskFactors, fundingFreshness.status, fundingAvgPct);
 
   // ---------------- 状态机 ----------------
   const failedBreakout = breakoutConfirmed && post.heldAboveBreakoutLevel === false;
@@ -792,6 +811,10 @@ export function analyzeAssetV2(
   collectMissing(followThroughConditions);
   collectMissing(riskFactors);
 
+  // P0-1：staleFields 如实填充（资金费率相对 K 线停更超 24h 即 stale）。
+  const staleFields: string[] = fundingFreshness.status === 'stale' ? ['funding'] : [];
+  const degraded = missingFields.length > 0 || staleFields.length > 0;
+
   // ---------------- Episode 归属（与历史/回测同一 Builder，实时共用） ----------------
   // 最近一个 trigger 属于旧 episode 还是新 episode start：顺序 Builder 在收盘时
   // 即可判定，无未来信息。
@@ -837,9 +860,17 @@ export function analyzeAssetV2(
     features,
     dataQuality: {
       missingFields: Array.from(new Set(missingFields)),
-      staleFields: [],
-      degraded: missingFields.length > 0,
-      summary: missingFields.length ? `${missingFields.length} 项条件因数据缺失不可判定` : '关键数据完整',
+      staleFields,
+      degraded,
+      summary:
+        missingFields.length || staleFields.length
+          ? [
+              missingFields.length ? `${missingFields.length} 项条件因数据缺失不可判定` : null,
+              staleFields.length ? `${staleFields.length} 项数据过期（${staleFields.join('、')}）` : null,
+            ]
+              .filter(Boolean)
+              .join('；')
+          : '关键数据完整',
     },
   };
 }

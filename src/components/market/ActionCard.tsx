@@ -22,18 +22,18 @@ export function ActionCard({ action }: { action: ActionState }) {
   const k = action.keyLevels;
   return (
     <div className={cn('space-y-3 rounded-lg border px-4 py-3', s.border, s.bg)}>
-      {/* Level 1：当前动作 */}
-      <div className="flex items-center gap-2">
-        <span className="text-xl" aria-hidden>
+      {/* Level 1：当前动作（手机端允许标题换行，不挤出 viewport） */}
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="shrink-0 text-xl" aria-hidden>
           {action.emoji}
         </span>
-        <span className={cn('text-base font-semibold', s.text)}>{action.title}</span>
+        <span className={cn('min-w-0 flex-1 break-words text-base font-semibold leading-snug', s.text)}>{action.title}</span>
       </div>
-      <p className="text-sm leading-relaxed text-foreground">{action.summary}</p>
+      <p className="break-words text-sm leading-relaxed text-foreground">{action.summary}</p>
 
-      {/* Level 2：关键价格 */}
+      {/* Level 2：关键价格（手机端单列，防长价格+长标签把双列挤出 viewport） */}
       {action.code !== 'DATA_BLOCKED' && (
-        <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
           <KeyPrice label="当前价格" value={k.currentPrice} />
           <KeyPrice label="本轮突破位" value={k.breakoutLevel} title="本次 Independent Breakout Episode 当时突破的关键阻力" />
           <KeyPrice label="结构失效位" value={k.invalidationLevel} title="跌破后，本轮结构失效" />
@@ -64,9 +64,9 @@ export function ActionCard({ action }: { action: ActionState }) {
       <div className="space-y-1">
         <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">为什么</div>
         {action.reasons.map((r, i) => (
-          <div key={i} className="flex gap-1.5 text-xs leading-relaxed">
-            <span className={r.ok ? 'text-radar' : 'text-bear'}>{r.ok ? '✓' : '✗'}</span>
-            <span className="text-foreground/90">{r.text}</span>
+          <div key={i} className="flex min-w-0 gap-1.5 text-xs leading-relaxed">
+            <span className={cn('shrink-0', r.ok ? 'text-radar' : 'text-bear')}>{r.ok ? '✓' : '✗'}</span>
+            <span className="min-w-0 flex-1 break-words text-foreground/90">{r.text}</span>
           </div>
         ))}
       </div>
@@ -74,7 +74,7 @@ export function ActionCard({ action }: { action: ActionState }) {
       {action.warnings.length > 0 && (
         <div className="space-y-1">
           {action.warnings.map((w, i) => (
-            <p key={i} className="text-[11px] leading-relaxed text-warn">
+            <p key={i} className="break-words text-[11px] leading-relaxed text-warn">
               ※ {w}
             </p>
           ))}
@@ -85,9 +85,9 @@ export function ActionCard({ action }: { action: ActionState }) {
       <div className="space-y-1">
         <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">接下来观察</div>
         {action.nextConditions.map((n, i) => (
-          <div key={i} className="flex gap-1.5 text-xs leading-relaxed">
-            <span className="text-muted-foreground">→</span>
-            <span className="text-foreground/90">
+          <div key={i} className="flex min-w-0 gap-1.5 text-xs leading-relaxed">
+            <span className="shrink-0 text-muted-foreground">→</span>
+            <span className="min-w-0 flex-1 break-words text-foreground/90">
               {n.condition}
               <span className="text-muted-foreground"> → {n.outcome}</span>
             </span>
@@ -95,9 +95,9 @@ export function ActionCard({ action }: { action: ActionState }) {
         ))}
       </div>
 
-      {action.episodeStatus && <p className="text-[11px] text-muted-foreground">{action.episodeStatus}</p>}
+      {action.episodeStatus && <p className="break-words text-[11px] text-muted-foreground">{action.episodeStatus}</p>}
       {action.dataFreshness.status !== 'ok' && action.dataFreshness.lastUpdatedTs != null && (
-        <p className="text-[11px] text-muted-foreground">最后有效更新：{formatTs(action.dataFreshness.lastUpdatedTs)}</p>
+        <p className="break-words text-[11px] text-muted-foreground">最后有效更新：{formatTs(action.dataFreshness.lastUpdatedTs)}</p>
       )}
     </div>
   );
@@ -105,11 +105,11 @@ export function ActionCard({ action }: { action: ActionState }) {
 
 function KeyPrice({ label, value, title }: { label: string; value: number | null; title?: string }) {
   return (
-    <div className="flex items-center justify-between rounded-md bg-background/60 px-2.5 py-1.5">
-      <span className="text-muted-foreground" title={title}>
+    <div className="flex min-w-0 items-center justify-between gap-2 rounded-md bg-background/60 px-2.5 py-1.5">
+      <span className="min-w-0 text-muted-foreground" title={title}>
         {label}
       </span>
-      <span className="tnum font-mono text-foreground">{formatPrice(value)}</span>
+      <span className="tnum max-w-[60%] shrink-0 break-all text-right font-mono text-foreground">{formatPrice(value)}</span>
     </div>
   );
 }

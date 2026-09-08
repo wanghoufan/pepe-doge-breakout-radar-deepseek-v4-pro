@@ -4,8 +4,9 @@ import { useApi } from '@/hooks/use-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SignalCard } from './SignalCard';
-import { SourceLine, DiagBox } from './DataStatus';
+import { SourceLine, DiagBox, SourceFreshnessRow } from './DataStatus';
 import { formatPrice, formatPct, formatTs, relativeTime } from '@/lib/format';
+import type { FeedFreshness } from '@/lib/freshness';
 import type { AssetSignal, Candle } from '@/lib/types';
 
 interface SourceDiagLike {
@@ -28,6 +29,8 @@ interface OverviewResp {
   error: string | null;
   errors: string[];
   fundingProvider: 'binance' | 'okx' | null;
+  freshness?: FeedFreshness | null;
+  fundingTs?: Record<'PEPE' | 'DOGE', number | null> | null;
   data: {
     btc: {
       symbol: string;
@@ -61,6 +64,10 @@ export function LiveRadar() {
   const failedDiag = sources
     ? [sources.okxCandles.BTC, sources.okxCandles.PEPE, sources.okxCandles.DOGE, sources.okxTickers].find((d) => !d.ok)
     : undefined;
+  // P0-1 三态：优先用服务端 freshness；缺字段时按 live 回退（不改变旧行为）。
+  const feedStatus = data?.freshness?.status ?? (data ? (live ? 'ok' : 'unavailable') : 'unavailable');
+  const staleReason = data?.freshness?.reason ?? (live ? null : (data?.error ?? 'OKX 实时数据当前不可用'));
+  const freshnessTs = data?.freshness?.lastUpdatedTs ?? data?.data.lastCandleTs ?? null;
 
   return (
     <section className="space-y-4">
@@ -94,7 +101,19 @@ export function LiveRadar() {
           <span>
             资金费率来源 {data.fundingProvider === 'okx' ? 'OKX（Binance 不可用）' : data.fundingProvider === 'binance' ? 'Binance' : '不可用'}
           </span>
+          {feedStatus !== 'ok' && freshnessTs != null && (
+            <span className="min-w-0 break-words text-warn">数据{feedStatus === 'stale' ? '已过期' : '不可用'}：{staleReason} · 最后有效更新 {formatTs(freshnessTs)}</span>
+          )}
         </div>
+      )}
+
+      {data && (
+        <SourceFreshnessRow
+          generatedAt={data.generatedAt}
+          lastConfirmedTs={data.data.lastConfirmedTs}
+          prices={data.data.prices}
+          fundingTs={data.fundingTs ?? null}
+        />
       )}
 
       {!live && (
@@ -144,12 +163,16 @@ export function LiveRadar() {
           signal={data?.data.pepe ?? null}
           price={data?.data.prices?.PEPE?.last ?? null}
           priceTs={data?.data.prices?.PEPE?.ts ?? null}
+          dataStatus={data ? feedStatus : undefined}
+          staleReason={data ? staleReason : undefined}
         />
         <SignalCard
           asset="DOGE"
           signal={data?.data.doge ?? null}
           price={data?.data.prices?.DOGE?.last ?? null}
           priceTs={data?.data.prices?.DOGE?.ts ?? null}
+          dataStatus={data ? feedStatus : undefined}
+          staleReason={data ? staleReason : undefined}
         />
       </div>
     </section>

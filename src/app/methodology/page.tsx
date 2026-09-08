@@ -135,6 +135,7 @@ const EVIDENCE = [
 const DISCLOSURES = [
   '本工具不是投资建议或信号系统，不构成任何买卖决策依据；不输出"建议开仓 / 买入 / 胜率"类表述。',
   '突破识别的历史回测（Precision/Recall/FPR/Success Rate/MFE/MAE）只反映样本外真实表现，不构成收益承诺。',
+  '方案A（冻结）：研究指标（误报率/Precision/Recall/FPR/Success 率）仅离线研究用，不进入 ActionCard、实时信号与任何报警/通知，不包装成胜率；ActionCard 只输出当前行动、关键价格与证据，不输出概率化收益表述。',
   '当前系统已完成 Pattern Detection 研究闭环，但 M1–M4 尚未证明具有显著样本外增量；M5（Follow-through Management）为候选方向，等待新的 holdout 验证。',
   'Setup 用于筛选值得观察的结构，不作为独立开仓信号：BUILDING_SETUP / NEAR_BREAKOUT 在普通行情窗口中误报率分别约 41% / 30%。',
   '所有阈值、权重均为「候选」性质，已用 walk-forward 在样本外检验，但样本量有限，仍需持续滚动更新。',
