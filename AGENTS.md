@@ -78,7 +78,7 @@ REST 接口（`app/api/**/route.ts`，前端统一相对路径调用 `/api/...`�
 
 ## 常见问题和预防
 
-- `pnpm test` 跑纯函数单测 + 21 事件回归：`node --import tsx --test src/lib/*.test.ts`；`event-analysis.test.ts` 会对一行`事件`是否与 `event-metrics.json` 完全一致。
+- `pnpm test` 跑纯函数单测 + 21 事件回归：`node --import tsx --test src/lib/*.test.ts src/lib/v2/*.test.ts`；`event-analysis.test.ts` 会对一行`事件`是否与 `event-metrics.json` 完全一致。
 - 改 `indicators.ts` 的算法会破坏与历史研究脚本的一致性，必须回归测试通过后再交付。
 - `globals.css` 里自定义 Tailwind 主题色：`--radar`(荧光青)、`--pepe`、`--doge`、`--btc`、`--bull`、`--bear`、`--warn`；新增组件配色用这些 token，不要写死 hex。
 - 图表为自绘 SVG（`CandleChart.tsx`），不要引入额外图表依赖。

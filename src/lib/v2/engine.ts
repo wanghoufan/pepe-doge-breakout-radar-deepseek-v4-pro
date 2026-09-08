@@ -12,6 +12,7 @@
 import { avg, emaSeries, meanTrueRangePct, median, pct } from '../indicators';
 import { percentileRank } from '../statistics';
 import { detectBreakout, getRollingHigh, DEFAULT_BREAKOUT_CONFIG, type BreakoutSignal } from '../breakout';
+import { getRealtimeEpisodeMembership, FROZEN_EPISODE_RULE } from './episode';
 import { relativeReturn, relativeStrengthPercentile, relativeStrengthSlope } from '../relative-strength';
 import { determineStateV2 } from '../state-machine';
 import {
@@ -82,6 +83,78 @@ function fmtPct(v: number | null, digits = 2): string {
   return v == null ? '数据缺失' : `${v >= 0 ? '+' : ''}${v.toFixed(digits)}%`;
 }
 
+/**
+ * Setup 层打分（0~100，导出供回测复用，与实时引擎同一函数，保证口径一致）。
+ * 输入必须是**突破前**的 SetupFeatures（回测侧传突破前前缀算出；实时侧传当前算出）。
+ */
+export function scoreSetupLayer(
+  setup: SetupFeatures,
+  t: V2Thresholds,
+  w: V2Weights,
+): { items: ConditionItem[]; score: number; available: number } {
+  const setupRows: Cond[] = [
+    {
+      key: 'atrCompression',
+      label: 'ATR 收缩（分位或比值达标）',
+      met: (setup.atrPercentile60d != null && setup.atrPercentile60d <= t.atrPercentileLow) ||
+        (setup.compressionRatio != null && setup.compressionRatio <= t.atrCompression),
+      unknown: setup.atrPercentile60d == null && setup.compressionRatio == null,
+      detail: `ATR 分位 ${setup.atrPercentile60d == null ? '—' : setup.atrPercentile60d.toFixed(0)} / 压缩比 ${setup.compressionRatio == null ? '—' : setup.compressionRatio.toFixed(2)}`,
+      weight: w.setup.atrCompression,
+    },
+    {
+      key: 'volumeContraction',
+      label: '量能收缩（近 3 日 / 前 7 日 < 1）',
+      met: setup.volumeContractionRatio != null && setup.volumeContractionRatio < 1,
+      unknown: setup.volumeContractionRatio == null,
+      detail: `量比 ${setup.volumeContractionRatio == null ? '—' : setup.volumeContractionRatio.toFixed(2)}`,
+      weight: w.setup.volumeContraction,
+    },
+    {
+      key: 'distanceToResistance',
+      label: `距阻力 < ${t.nearResistancePct}%`,
+      met: setup.distanceToResistancePct != null && setup.distanceToResistancePct > -t.nearResistancePct,
+      unknown: setup.distanceToResistancePct == null,
+      detail: `距阻力 ${fmtPct(setup.distanceToResistancePct)}`,
+      weight: w.setup.distanceToResistance,
+    },
+    {
+      key: 'baseDuration',
+      label: '蓄势时长足够',
+      met: setup.baseDurationCandles != null && setup.baseDurationCandles >= t.baseDurationMinCandles,
+      unknown: setup.baseDurationCandles == null,
+      detail: `蓄势 ${setup.baseDurationCandles == null ? '—' : setup.baseDurationCandles + ' 根'}`,
+      weight: w.setup.baseDuration,
+    },
+    {
+      key: 'higherLow',
+      label: 'Higher Low 结构',
+      met: setup.higherLow === true,
+      unknown: setup.higherLow == null,
+      detail: setup.higherLow == null ? '数据缺失' : setup.higherLow ? '近低点上移' : '近低点未上移',
+      weight: w.setup.higherLow,
+    },
+    {
+      key: 'relativeStrength',
+      label: '相对 BTC 转强',
+      met: setup.relativeStrengthPct != null && setup.relativeStrengthPct > 0,
+      unknown: setup.relativeStrengthPct == null,
+      detail: `相对强度 ${fmtPct(setup.relativeStrengthPct)}`,
+      weight: w.setup.relativeStrength,
+    },
+    {
+      key: 'emaBullishStack',
+      label: 'EMA 多头排列',
+      met: setup.emaBullishStack === true,
+      unknown: setup.emaBullishStack == null,
+      detail: setup.emaBullishStack == null ? '数据缺失' : setup.emaBullishStack ? 'EMA20>50>100' : 'EMA 未多头排列',
+      weight: w.setup.emaBullishStack,
+    },
+  ];
+  const scored = scoreConds(setupRows);
+  return { items: scored.items, score: scored.score, available: scored.available };
+}
+
 /* ------------------------------------------------------------------ */
 /* BTC 环境（供 overview 与 Environment Gate 共用）                    */
 /* ------------------------------------------------------------------ */
@@ -138,7 +211,7 @@ export function computeBtcEnvironment(btc: Candle[], t: V2Thresholds): BtcEnvFie
 /* Setup 特征（只允许突破前数据）                                       */
 /* ------------------------------------------------------------------ */
 
-interface SetupFeatures {
+export interface SetupFeatures {
   compressionRatio: number | null;
   atrPercentile60d: number | null;
   volumeContractionRatio: number | null;
@@ -453,67 +526,8 @@ export function analyzeAssetV2(
   const invalidated = rollingHigh != null ? last.c < rollingHigh * 0.94 : false;
   const hardVeto = evaluateHardVeto(bars, btcEnv, invalidated, t);
 
-  // ---------------- Setup 评分（0~100） ----------------
-  const setupRows: Cond[] = [
-    {
-      key: 'atrCompression',
-      label: 'ATR 收缩（分位或比值达标）',
-      met: (setup.atrPercentile60d != null && setup.atrPercentile60d <= t.atrPercentileLow) ||
-        (setup.compressionRatio != null && setup.compressionRatio <= t.atrCompression),
-      unknown: setup.atrPercentile60d == null && setup.compressionRatio == null,
-      detail: `ATR 分位 ${setup.atrPercentile60d == null ? '—' : setup.atrPercentile60d.toFixed(0)} / 压缩比 ${setup.compressionRatio == null ? '—' : setup.compressionRatio.toFixed(2)}`,
-      weight: w.setup.atrCompression,
-    },
-    {
-      key: 'volumeContraction',
-      label: '量能收缩（近 3 日 / 前 7 日 < 1）',
-      met: setup.volumeContractionRatio != null && setup.volumeContractionRatio < 1,
-      unknown: setup.volumeContractionRatio == null,
-      detail: `量比 ${setup.volumeContractionRatio == null ? '—' : setup.volumeContractionRatio.toFixed(2)}`,
-      weight: w.setup.volumeContraction,
-    },
-    {
-      key: 'distanceToResistance',
-      label: `距阻力 < ${t.nearResistancePct}%`,
-      met: setup.distanceToResistancePct != null && setup.distanceToResistancePct > -t.nearResistancePct,
-      unknown: setup.distanceToResistancePct == null,
-      detail: `距阻力 ${fmtPct(setup.distanceToResistancePct)}`,
-      weight: w.setup.distanceToResistance,
-    },
-    {
-      key: 'baseDuration',
-      label: '蓄势时长足够',
-      met: setup.baseDurationCandles != null && setup.baseDurationCandles >= t.baseDurationMinCandles,
-      unknown: setup.baseDurationCandles == null,
-      detail: `蓄势 ${setup.baseDurationCandles == null ? '—' : setup.baseDurationCandles + ' 根'}`,
-      weight: w.setup.baseDuration,
-    },
-    {
-      key: 'higherLow',
-      label: 'Higher Low 结构',
-      met: setup.higherLow === true,
-      unknown: setup.higherLow == null,
-      detail: setup.higherLow == null ? '数据缺失' : setup.higherLow ? '近低点上移' : '近低点未上移',
-      weight: w.setup.higherLow,
-    },
-    {
-      key: 'relativeStrength',
-      label: '相对 BTC 转强',
-      met: setup.relativeStrengthPct != null && setup.relativeStrengthPct > 0,
-      unknown: setup.relativeStrengthPct == null,
-      detail: `相对强度 ${fmtPct(setup.relativeStrengthPct)}`,
-      weight: w.setup.relativeStrength,
-    },
-    {
-      key: 'emaBullishStack',
-      label: 'EMA 多头排列',
-      met: setup.emaBullishStack === true,
-      unknown: setup.emaBullishStack == null,
-      detail: setup.emaBullishStack == null ? '数据缺失' : setup.emaBullishStack ? 'EMA20>50>100' : 'EMA 未多头排列',
-      weight: w.setup.emaBullishStack,
-    },
-  ];
-  const setupScored = scoreConds(setupRows);
+  // ---------------- Setup 评分（0~100，与回测共用 scoreSetupLayer） ----------------
+  const setupScored = scoreSetupLayer(setup, t, w);
   const setupScore = norm100(setupScored.score, setupScored.available);
   const setupLayered: LayeredScore = {
     value: setupScore,
@@ -775,6 +789,18 @@ export function analyzeAssetV2(
   collectMissing(followThroughConditions);
   collectMissing(riskFactors);
 
+  // ---------------- Episode 归属（与历史/回测同一 Builder，实时共用） ----------------
+  // 最近一个 trigger 属于旧 episode 还是新 episode start：顺序 Builder 在收盘时
+  // 即可判定，无未来信息。
+  const episodeMembership = breakoutConfirmed
+    ? getRealtimeEpisodeMembership(
+        bars,
+        { ...DEFAULT_BREAKOUT_CONFIG, lookbackCandles: t.breakoutLookbackCandles },
+        FROZEN_EPISODE_RULE,
+        asset === 'PEPE' || asset === 'DOGE' ? asset : 'UNKNOWN',
+      )
+    : { episodeId: null, triggerIndexInEpisode: null, triggersInEpisode: null, isEpisodeStart: null };
+
   return {
     asset,
     state,
@@ -799,6 +825,10 @@ export function analyzeAssetV2(
       intradayAttempt,
       barsSinceBreakout: post.barsSinceBreakout,
       hoursSinceBreakout: post.hoursSinceBreakout,
+      episodeId: episodeMembership.episodeId,
+      triggerIndexInEpisode: episodeMembership.triggerIndexInEpisode,
+      triggersInEpisode: episodeMembership.triggersInEpisode,
+      isEpisodeStart: episodeMembership.isEpisodeStart,
     },
     keyLevels,
     features,

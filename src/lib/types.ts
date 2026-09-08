@@ -122,6 +122,18 @@ export interface BreakoutInfo {
   barsSinceBreakout: number | null;
   /** 突破后经过的小时数（按已收盘 K 线估算）。 */
   hoursSinceBreakout: number | null;
+  /**
+   * Episode 归属（V2 整改 §5：实时/历史/回测同一 Builder）。
+   * 最近一个 trigger 属于旧 episode 还是新 episode start。
+   * 可选字段：老消费者不受影响；无突破时为 null。
+   */
+  episodeId?: string | null;
+  /** 该 trigger 在其 episode 中的序号（1 = episode start）。 */
+  triggerIndexInEpisode?: number | null;
+  /** 所属 episode 当前共吸收的 trigger 数。 */
+  triggersInEpisode?: number | null;
+  /** 是否为 episode start（新一轮独立突破）。 */
+  isEpisodeStart?: boolean | null;
 }
 
 /* ------------------------------------------------------------------ */

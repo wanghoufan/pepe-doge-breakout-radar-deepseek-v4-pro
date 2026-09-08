@@ -30,8 +30,9 @@ export interface V2StateInput {
   setupScore: number | null;
 }
 
-const NEAR_SETUP_THRESHOLD = 65;
-const BUILDING_SETUP_THRESHOLD = 35;
+/** Setup 预警分层阈值（与 determineStateV2 同源；normal 窗口误报统计复用）。 */
+export const NEAR_SETUP_THRESHOLD = 65;
+export const BUILDING_SETUP_THRESHOLD = 35;
 
 export function determineStateV2(input: V2StateInput): StateCode {
   // 1) 硬否决
