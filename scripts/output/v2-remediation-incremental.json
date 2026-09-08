@@ -1,0 +1,220 @@
+{
+  "generatedAt": "2026-09-08T00:50:42.275Z",
+  "note": "全样本比较为描述性；样本外结论以 walk-forward folds 为准",
+  "models": [
+    {
+      "model": "B0",
+      "label": "Baseline 0（无策略）",
+      "chosen": null,
+      "metrics": {
+        "labeled": 116,
+        "signals": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 41,
+        "tn": 75,
+        "precision": null,
+        "recall": 0,
+        "specificity": 1,
+        "fpr": 0,
+        "fnr": 1,
+        "f1": null,
+        "prAuc": null,
+        "rocAuc": null,
+        "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+        "medianMfe": null,
+        "medianMae": null,
+        "medianReturn": null,
+        "signalsPerMonth": null,
+        "baseRate": 0.35344827586206895
+      }
+    },
+    {
+      "model": "B1",
+      "label": "Baseline 1（裸 Rolling 突破）",
+      "chosen": null,
+      "metrics": {
+        "labeled": 116,
+        "signals": 116,
+        "tp": 41,
+        "fp": 75,
+        "fn": 0,
+        "tn": 0,
+        "precision": 0.35344827586206895,
+        "recall": 1,
+        "specificity": 0,
+        "fpr": 1,
+        "fnr": 0,
+        "f1": 0.5222929936305732,
+        "prAuc": null,
+        "rocAuc": null,
+        "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+        "medianMfe": 6.572330626467682,
+        "medianMae": -5.184299946876203,
+        "medianReturn": -1.655582865614208,
+        "signalsPerMonth": 4.150909090909091,
+        "baseRate": 0.35344827586206895
+      }
+    },
+    {
+      "model": "M1",
+      "label": "Model 1（+Breakout Volume）",
+      "chosen": {
+        "volumeMin": 1,
+        "setupMin": 40,
+        "distanceMin": 0,
+        "riskMax": 20
+      },
+      "metrics": {
+        "labeled": 116,
+        "signals": 112,
+        "tp": 40,
+        "fp": 72,
+        "fn": 1,
+        "tn": 3,
+        "precision": 0.35714285714285715,
+        "recall": 0.975609756097561,
+        "specificity": 0.04,
+        "fpr": 0.96,
+        "fnr": 0.024390243902439025,
+        "f1": 0.5228758169934641,
+        "prAuc": 0.3567671163624735,
+        "rocAuc": 0.48845528455284554,
+        "aucNote": null,
+        "medianMfe": 6.781069933584083,
+        "medianMae": -5.184299946876203,
+        "medianReturn": -1.655582865614208,
+        "signalsPerMonth": 4.007774294670846,
+        "baseRate": 0.35344827586206895
+      }
+    },
+    {
+      "model": "M2",
+      "label": "Model 2（Env+Setup+Trigger）",
+      "chosen": {
+        "volumeMin": 1,
+        "setupMin": 40,
+        "distanceMin": 0,
+        "riskMax": 20
+      },
+      "metrics": {
+        "labeled": 116,
+        "signals": 108,
+        "tp": 38,
+        "fp": 70,
+        "fn": 3,
+        "tn": 5,
+        "precision": 0.35185185185185186,
+        "recall": 0.926829268292683,
+        "specificity": 0.06666666666666667,
+        "fpr": 0.9333333333333333,
+        "fnr": 0.07317073170731707,
+        "f1": 0.5100671140939598,
+        "prAuc": 0.44237827396778157,
+        "rocAuc": 0.5128455284552845,
+        "aucNote": null,
+        "medianMfe": 6.354125942119849,
+        "medianMae": -5.382204756754893,
+        "medianReturn": -1.7433586566737158,
+        "signalsPerMonth": 3.866154449235594,
+        "baseRate": 0.35344827586206895
+      }
+    },
+    {
+      "model": "M3",
+      "label": "Model 3（+Risk）",
+      "chosen": {
+        "volumeMin": 1,
+        "setupMin": 40,
+        "distanceMin": 0,
+        "riskMax": 20
+      },
+      "metrics": {
+        "labeled": 116,
+        "signals": 101,
+        "tp": 36,
+        "fp": 65,
+        "fn": 5,
+        "tn": 10,
+        "precision": 0.3564356435643564,
+        "recall": 0.8780487804878049,
+        "specificity": 0.13333333333333333,
+        "fpr": 0.8666666666666667,
+        "fnr": 0.12195121951219512,
+        "f1": 0.5070422535211268,
+        "prAuc": null,
+        "rocAuc": null,
+        "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+        "medianMfe": 6.692387594598603,
+        "medianMae": -5.447516401124641,
+        "medianReturn": -1.7761255679471288,
+        "signalsPerMonth": 3.6155703645629167,
+        "baseRate": 0.35344827586206895
+      }
+    },
+    {
+      "model": "M4",
+      "label": "Model 4（+Hard Veto）",
+      "chosen": {
+        "volumeMin": 1,
+        "setupMin": 40,
+        "distanceMin": 0,
+        "riskMax": 20
+      },
+      "metrics": {
+        "labeled": 116,
+        "signals": 101,
+        "tp": 36,
+        "fp": 65,
+        "fn": 5,
+        "tn": 10,
+        "precision": 0.3564356435643564,
+        "recall": 0.8780487804878049,
+        "specificity": 0.13333333333333333,
+        "fpr": 0.8666666666666667,
+        "fnr": 0.12195121951219512,
+        "f1": 0.5070422535211268,
+        "prAuc": null,
+        "rocAuc": null,
+        "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+        "medianMfe": 6.692387594598603,
+        "medianMae": -5.447516401124641,
+        "medianReturn": -1.7761255679471288,
+        "signalsPerMonth": 3.6155703645629167,
+        "baseRate": 0.35344827586206895
+      }
+    },
+    {
+      "model": "M5",
+      "label": "Model 5（+Follow-through 管理）",
+      "chosen": {
+        "volumeMin": 1,
+        "setupMin": 40,
+        "distanceMin": 0,
+        "riskMax": 20
+      },
+      "metrics": {
+        "labeled": 116,
+        "signals": 58,
+        "tp": 31,
+        "fp": 27,
+        "fn": 10,
+        "tn": 48,
+        "precision": 0.5344827586206896,
+        "recall": 0.7560975609756098,
+        "specificity": 0.64,
+        "fpr": 0.36,
+        "fnr": 0.24390243902439024,
+        "f1": 0.6262626262626262,
+        "prAuc": null,
+        "rocAuc": null,
+        "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+        "medianMfe": 11.325589876606301,
+        "medianMae": -2.875092360533893,
+        "medianReturn": 2.5895088997177074,
+        "signalsPerMonth": 2.076268130145041,
+        "baseRate": 0.35344827586206895
+      }
+    }
+  ]
+}

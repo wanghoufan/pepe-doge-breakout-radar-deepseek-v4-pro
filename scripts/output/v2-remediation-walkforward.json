@@ -1,0 +1,1632 @@
+{
+  "generatedAt": "2026-09-08T00:50:42.275Z",
+  "protocolCompliant": {
+    "compliant": true,
+    "violations": []
+  },
+  "folds": [
+    {
+      "name": "fold-1",
+      "trainCampaigns": [
+        "GAP-2024-Q2",
+        "GAP-2024-Q3",
+        "GAP-2024-Q4",
+        "C01",
+        "GAP-2025-Q1"
+      ],
+      "testCampaigns": [
+        "GAP-2025-Q2",
+        "C02",
+        "GAP-2025-Q3",
+        "C03"
+      ],
+      "trainFrom": 1713672000000,
+      "trainTo": 1742961600000,
+      "testFrom": 1744459200000,
+      "testTo": 1753027200000,
+      "models": [
+        {
+          "model": "B0",
+          "chosen": null,
+          "trainMetrics": {
+            "labeled": 49,
+            "signals": 0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 21,
+            "tn": 28,
+            "precision": null,
+            "recall": 0,
+            "specificity": 1,
+            "fpr": 0,
+            "fnr": 1,
+            "f1": null,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": null,
+            "medianMae": null,
+            "medianReturn": null,
+            "signalsPerMonth": null,
+            "baseRate": 0.42857142857142855
+          },
+          "testMetrics": {
+            "labeled": 28,
+            "signals": 0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 9,
+            "tn": 19,
+            "precision": null,
+            "recall": 0,
+            "specificity": 1,
+            "fpr": 0,
+            "fnr": 1,
+            "f1": null,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": null,
+            "medianMae": null,
+            "medianReturn": null,
+            "signalsPerMonth": null,
+            "baseRate": 0.32142857142857145
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "B1",
+          "chosen": null,
+          "trainMetrics": {
+            "labeled": 49,
+            "signals": 49,
+            "tp": 21,
+            "fp": 28,
+            "fn": 0,
+            "tn": 0,
+            "precision": 0.42857142857142855,
+            "recall": 1,
+            "specificity": 0,
+            "fpr": 1,
+            "fnr": 0,
+            "f1": 0.6,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 8.096976504727138,
+            "medianMae": -5.040957781978572,
+            "medianReturn": -1.2055072647674692,
+            "signalsPerMonth": 4.399882005899705,
+            "baseRate": 0.42857142857142855
+          },
+          "testMetrics": {
+            "labeled": 28,
+            "signals": 28,
+            "tp": 9,
+            "fp": 19,
+            "fn": 0,
+            "tn": 0,
+            "precision": 0.32142857142857145,
+            "recall": 1,
+            "specificity": 0,
+            "fpr": 1,
+            "fnr": 0,
+            "f1": 0.4864864864864865,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 5.3631111205657,
+            "medianMae": -7.955672225398725,
+            "medianReturn": -3.6148739725870236,
+            "signalsPerMonth": 5.564657236126225,
+            "baseRate": 0.32142857142857145
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M1",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 49,
+            "signals": 47,
+            "tp": 21,
+            "fp": 26,
+            "fn": 0,
+            "tn": 2,
+            "precision": 0.44680851063829785,
+            "recall": 1,
+            "specificity": 0.07142857142857142,
+            "fpr": 0.9285714285714286,
+            "fnr": 0,
+            "f1": 0.6176470588235294,
+            "prAuc": 0.44557762436958215,
+            "rocAuc": 0.5051020408163265,
+            "aucNote": null,
+            "medianMfe": 9.796733579410422,
+            "medianMae": -4.843462246777164,
+            "medianReturn": -1.1494252873563093,
+            "signalsPerMonth": 4.220294985250737,
+            "baseRate": 0.42857142857142855
+          },
+          "testMetrics": {
+            "labeled": 28,
+            "signals": 28,
+            "tp": 9,
+            "fp": 19,
+            "fn": 0,
+            "tn": 0,
+            "precision": 0.32142857142857145,
+            "recall": 1,
+            "specificity": 0,
+            "fpr": 1,
+            "fnr": 0,
+            "f1": 0.4864864864864865,
+            "prAuc": 0.3944546194546194,
+            "rocAuc": 0.6140350877192983,
+            "aucNote": null,
+            "medianMfe": 5.3631111205657,
+            "medianMae": -7.955672225398725,
+            "medianReturn": -3.6148739725870236,
+            "signalsPerMonth": 5.564657236126225,
+            "baseRate": 0.32142857142857145
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M2",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 49,
+            "signals": 45,
+            "tp": 21,
+            "fp": 24,
+            "fn": 0,
+            "tn": 4,
+            "precision": 0.4666666666666667,
+            "recall": 1,
+            "specificity": 0.14285714285714285,
+            "fpr": 0.8571428571428571,
+            "fnr": 0,
+            "f1": 0.6363636363636364,
+            "prAuc": 0.5355842372764731,
+            "rocAuc": 0.5357142857142857,
+            "aucNote": null,
+            "medianMfe": 10.845253576072821,
+            "medianMae": -4.843462246777164,
+            "medianReturn": -1.1494252873563093,
+            "signalsPerMonth": 4.040707964601769,
+            "baseRate": 0.42857142857142855
+          },
+          "testMetrics": {
+            "labeled": 28,
+            "signals": 28,
+            "tp": 9,
+            "fp": 19,
+            "fn": 0,
+            "tn": 0,
+            "precision": 0.32142857142857145,
+            "recall": 1,
+            "specificity": 0,
+            "fpr": 1,
+            "fnr": 0,
+            "f1": 0.4864864864864865,
+            "prAuc": 0.39847969618501017,
+            "rocAuc": 0.47953216374269003,
+            "aucNote": null,
+            "medianMfe": 5.3631111205657,
+            "medianMae": -7.955672225398725,
+            "medianReturn": -3.6148739725870236,
+            "signalsPerMonth": 5.564657236126225,
+            "baseRate": 0.32142857142857145
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M3",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 49,
+            "signals": 43,
+            "tp": 21,
+            "fp": 22,
+            "fn": 0,
+            "tn": 6,
+            "precision": 0.4883720930232558,
+            "recall": 1,
+            "specificity": 0.21428571428571427,
+            "fpr": 0.7857142857142857,
+            "fnr": 0,
+            "f1": 0.65625,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 10.874431700168486,
+            "medianMae": -4.843462246777164,
+            "medianReturn": -0.9197811153801472,
+            "signalsPerMonth": 3.8611209439528023,
+            "baseRate": 0.42857142857142855
+          },
+          "testMetrics": {
+            "labeled": 28,
+            "signals": 25,
+            "tp": 7,
+            "fp": 18,
+            "fn": 2,
+            "tn": 1,
+            "precision": 0.28,
+            "recall": 0.7777777777777778,
+            "specificity": 0.05263157894736842,
+            "fpr": 0.9473684210526315,
+            "fnr": 0.2222222222222222,
+            "f1": 0.4117647058823529,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 5.213300683077726,
+            "medianMae": -8.41648590021693,
+            "medianReturn": -4.423639555295489,
+            "signalsPerMonth": 4.968443960826986,
+            "baseRate": 0.32142857142857145
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M4",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 49,
+            "signals": 43,
+            "tp": 21,
+            "fp": 22,
+            "fn": 0,
+            "tn": 6,
+            "precision": 0.4883720930232558,
+            "recall": 1,
+            "specificity": 0.21428571428571427,
+            "fpr": 0.7857142857142857,
+            "fnr": 0,
+            "f1": 0.65625,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 10.874431700168486,
+            "medianMae": -4.843462246777164,
+            "medianReturn": -0.9197811153801472,
+            "signalsPerMonth": 3.8611209439528023,
+            "baseRate": 0.42857142857142855
+          },
+          "testMetrics": {
+            "labeled": 28,
+            "signals": 25,
+            "tp": 7,
+            "fp": 18,
+            "fn": 2,
+            "tn": 1,
+            "precision": 0.28,
+            "recall": 0.7777777777777778,
+            "specificity": 0.05263157894736842,
+            "fpr": 0.9473684210526315,
+            "fnr": 0.2222222222222222,
+            "f1": 0.4117647058823529,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 5.213300683077726,
+            "medianMae": -8.41648590021693,
+            "medianReturn": -4.423639555295489,
+            "signalsPerMonth": 4.968443960826986,
+            "baseRate": 0.32142857142857145
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M5",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 49,
+            "signals": 31,
+            "tp": 17,
+            "fp": 14,
+            "fn": 4,
+            "tn": 14,
+            "precision": 0.5483870967741935,
+            "recall": 0.8095238095238095,
+            "specificity": 0.5,
+            "fpr": 0.5,
+            "fnr": 0.19047619047619047,
+            "f1": 0.6538461538461537,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 13.38374291115314,
+            "medianMae": -4.143266160114523,
+            "medianReturn": 0.5871582801944442,
+            "signalsPerMonth": 2.7835988200589967,
+            "baseRate": 0.42857142857142855
+          },
+          "testMetrics": {
+            "labeled": 28,
+            "signals": 12,
+            "tp": 7,
+            "fp": 5,
+            "fn": 2,
+            "tn": 14,
+            "precision": 0.5833333333333334,
+            "recall": 0.7777777777777778,
+            "specificity": 0.7368421052631579,
+            "fpr": 0.2631578947368421,
+            "fnr": 0.2222222222222222,
+            "f1": 0.6666666666666666,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 12.413650184285231,
+            "medianMae": -3.073320825608122,
+            "medianReturn": 8.9151621869206,
+            "signalsPerMonth": 2.5249769585253454,
+            "baseRate": 0.32142857142857145
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        }
+      ]
+    },
+    {
+      "name": "fold-2",
+      "trainCampaigns": [
+        "GAP-2024-Q2",
+        "GAP-2024-Q3",
+        "GAP-2024-Q4",
+        "C01",
+        "GAP-2025-Q1",
+        "GAP-2025-Q2",
+        "C02",
+        "GAP-2025-Q3",
+        "C03"
+      ],
+      "testCampaigns": [
+        "C04",
+        "GAP-2025-Q4",
+        "C05",
+        "C06"
+      ],
+      "trainFrom": 1713672000000,
+      "trainTo": 1753027200000,
+      "testFrom": 1754596800000,
+      "testTo": 1771056000000,
+      "models": [
+        {
+          "model": "B0",
+          "chosen": null,
+          "trainMetrics": {
+            "labeled": 77,
+            "signals": 0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 30,
+            "tn": 47,
+            "precision": null,
+            "recall": 0,
+            "specificity": 1,
+            "fpr": 0,
+            "fnr": 1,
+            "f1": null,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": null,
+            "medianMae": null,
+            "medianReturn": null,
+            "signalsPerMonth": null,
+            "baseRate": 0.38961038961038963
+          },
+          "testMetrics": {
+            "labeled": 14,
+            "signals": 0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 6,
+            "tn": 8,
+            "precision": null,
+            "recall": 0,
+            "specificity": 1,
+            "fpr": 0,
+            "fnr": 1,
+            "f1": null,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": null,
+            "medianMae": null,
+            "medianReturn": null,
+            "signalsPerMonth": null,
+            "baseRate": 0.42857142857142855
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "B1",
+          "chosen": null,
+          "trainMetrics": {
+            "labeled": 77,
+            "signals": 77,
+            "tp": 30,
+            "fp": 47,
+            "fn": 0,
+            "tn": 0,
+            "precision": 0.38961038961038963,
+            "recall": 1,
+            "specificity": 0,
+            "fpr": 1,
+            "fnr": 0,
+            "f1": 0.5607476635514019,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 6.953049703979097,
+            "medianMae": -5.447516401124641,
+            "medianReturn": -1.601537475976944,
+            "signalsPerMonth": 4.600353287536801,
+            "baseRate": 0.38961038961038963
+          },
+          "testMetrics": {
+            "labeled": 14,
+            "signals": 14,
+            "tp": 6,
+            "fp": 8,
+            "fn": 0,
+            "tn": 0,
+            "precision": 0.42857142857142855,
+            "recall": 1,
+            "specificity": 0,
+            "fpr": 1,
+            "fnr": 0,
+            "f1": 0.6,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 7.022219077617098,
+            "medianMae": -2.397429153991437,
+            "medianReturn": -1.119935484589385,
+            "signalsPerMonth": 2.237060367454068,
+            "baseRate": 0.42857142857142855
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M1",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 77,
+            "signals": 75,
+            "tp": 30,
+            "fp": 45,
+            "fn": 0,
+            "tn": 2,
+            "precision": 0.4,
+            "recall": 1,
+            "specificity": 0.0425531914893617,
+            "fpr": 0.9574468085106383,
+            "fnr": 0,
+            "f1": 0.5714285714285715,
+            "prAuc": 0.41073784195924856,
+            "rocAuc": 0.5347517730496454,
+            "aucNote": null,
+            "medianMfe": 7.111813512445675,
+            "medianMae": -5.316893112385146,
+            "medianReturn": -1.2813102119460518,
+            "signalsPerMonth": 4.480863591756624,
+            "baseRate": 0.38961038961038963
+          },
+          "testMetrics": {
+            "labeled": 14,
+            "signals": 12,
+            "tp": 5,
+            "fp": 7,
+            "fn": 1,
+            "tn": 1,
+            "precision": 0.4166666666666667,
+            "recall": 0.8333333333333334,
+            "specificity": 0.125,
+            "fpr": 0.875,
+            "fnr": 0.16666666666666666,
+            "f1": 0.5555555555555556,
+            "prAuc": 0.5456349206349207,
+            "rocAuc": 0.4791666666666667,
+            "aucNote": null,
+            "medianMfe": 5.694564787710532,
+            "medianMae": -3.653278451587328,
+            "medianReturn": -1.5343563307730845,
+            "signalsPerMonth": 1.9174803149606299,
+            "baseRate": 0.42857142857142855
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M2",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 77,
+            "signals": 73,
+            "tp": 30,
+            "fp": 43,
+            "fn": 0,
+            "tn": 4,
+            "precision": 0.410958904109589,
+            "recall": 1,
+            "specificity": 0.0851063829787234,
+            "fpr": 0.9148936170212766,
+            "fnr": 0,
+            "f1": 0.5825242718446603,
+            "prAuc": 0.48143635261093026,
+            "rocAuc": 0.500709219858156,
+            "aucNote": null,
+            "medianMfe": 7.111813512445675,
+            "medianMae": -5.316893112385146,
+            "medianReturn": -1.601537475976944,
+            "signalsPerMonth": 4.361373895976447,
+            "baseRate": 0.38961038961038963
+          },
+          "testMetrics": {
+            "labeled": 14,
+            "signals": 12,
+            "tp": 5,
+            "fp": 7,
+            "fn": 1,
+            "tn": 1,
+            "precision": 0.4166666666666667,
+            "recall": 0.8333333333333334,
+            "specificity": 0.125,
+            "fpr": 0.875,
+            "fnr": 0.16666666666666666,
+            "f1": 0.5555555555555556,
+            "prAuc": 0.4917378917378918,
+            "rocAuc": 0.625,
+            "aucNote": null,
+            "medianMfe": 5.694564787710532,
+            "medianMae": -3.653278451587328,
+            "medianReturn": -1.5343563307730845,
+            "signalsPerMonth": 1.9174803149606299,
+            "baseRate": 0.42857142857142855
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M3",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 77,
+            "signals": 68,
+            "tp": 28,
+            "fp": 40,
+            "fn": 2,
+            "tn": 7,
+            "precision": 0.4117647058823529,
+            "recall": 0.9333333333333333,
+            "specificity": 0.14893617021276595,
+            "fpr": 0.851063829787234,
+            "fnr": 0.06666666666666667,
+            "f1": 0.5714285714285713,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 7.363310692492753,
+            "medianMae": -5.382204756754893,
+            "medianReturn": -1.6888315219620365,
+            "signalsPerMonth": 4.0626496565260055,
+            "baseRate": 0.38961038961038963
+          },
+          "testMetrics": {
+            "labeled": 14,
+            "signals": 12,
+            "tp": 5,
+            "fp": 7,
+            "fn": 1,
+            "tn": 1,
+            "precision": 0.4166666666666667,
+            "recall": 0.8333333333333334,
+            "specificity": 0.125,
+            "fpr": 0.875,
+            "fnr": 0.16666666666666666,
+            "f1": 0.5555555555555556,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 5.694564787710532,
+            "medianMae": -3.653278451587328,
+            "medianReturn": -1.5343563307730845,
+            "signalsPerMonth": 1.9174803149606299,
+            "baseRate": 0.42857142857142855
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M4",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 77,
+            "signals": 68,
+            "tp": 28,
+            "fp": 40,
+            "fn": 2,
+            "tn": 7,
+            "precision": 0.4117647058823529,
+            "recall": 0.9333333333333333,
+            "specificity": 0.14893617021276595,
+            "fpr": 0.851063829787234,
+            "fnr": 0.06666666666666667,
+            "f1": 0.5714285714285713,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 7.363310692492753,
+            "medianMae": -5.382204756754893,
+            "medianReturn": -1.6888315219620365,
+            "signalsPerMonth": 4.0626496565260055,
+            "baseRate": 0.38961038961038963
+          },
+          "testMetrics": {
+            "labeled": 14,
+            "signals": 12,
+            "tp": 5,
+            "fp": 7,
+            "fn": 1,
+            "tn": 1,
+            "precision": 0.4166666666666667,
+            "recall": 0.8333333333333334,
+            "specificity": 0.125,
+            "fpr": 0.875,
+            "fnr": 0.16666666666666666,
+            "f1": 0.5555555555555556,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 5.694564787710532,
+            "medianMae": -3.653278451587328,
+            "medianReturn": -1.5343563307730845,
+            "signalsPerMonth": 1.9174803149606299,
+            "baseRate": 0.42857142857142855
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M5",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 77,
+            "signals": 43,
+            "tp": 24,
+            "fp": 19,
+            "fn": 6,
+            "tn": 28,
+            "precision": 0.5581395348837209,
+            "recall": 0.8,
+            "specificity": 0.5957446808510638,
+            "fpr": 0.40425531914893614,
+            "fnr": 0.2,
+            "f1": 0.6575342465753425,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 13.215724575753885,
+            "medianMae": -3.9741259036908616,
+            "medianReturn": 4.742953715313725,
+            "signalsPerMonth": 2.569028459273798,
+            "baseRate": 0.38961038961038963
+          },
+          "testMetrics": {
+            "labeled": 14,
+            "signals": 7,
+            "tp": 5,
+            "fp": 2,
+            "fn": 1,
+            "tn": 6,
+            "precision": 0.7142857142857143,
+            "recall": 0.8333333333333334,
+            "specificity": 0.75,
+            "fpr": 0.25,
+            "fnr": 0.16666666666666666,
+            "f1": 0.7692307692307692,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 16.897066136250615,
+            "medianMae": -1.2691269126912763,
+            "medianReturn": 5.238523852385235,
+            "signalsPerMonth": 1.118530183727034,
+            "baseRate": 0.42857142857142855
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        }
+      ]
+    },
+    {
+      "name": "fold-3",
+      "trainCampaigns": [
+        "GAP-2024-Q2",
+        "GAP-2024-Q3",
+        "GAP-2024-Q4",
+        "C01",
+        "GAP-2025-Q1",
+        "GAP-2025-Q2",
+        "C02",
+        "GAP-2025-Q3",
+        "C03",
+        "C04",
+        "GAP-2025-Q4",
+        "C05",
+        "C06"
+      ],
+      "testCampaigns": [
+        "GAP-2026-Q1",
+        "GAP-2026-Q2",
+        "GAP-2026-Q3",
+        "C07"
+      ],
+      "trainFrom": 1713672000000,
+      "trainTo": 1771056000000,
+      "testFrom": 1772035200000,
+      "testTo": 1787169600000,
+      "models": [
+        {
+          "model": "B0",
+          "chosen": null,
+          "trainMetrics": {
+            "labeled": 91,
+            "signals": 0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 36,
+            "tn": 55,
+            "precision": null,
+            "recall": 0,
+            "specificity": 1,
+            "fpr": 0,
+            "fnr": 1,
+            "f1": null,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": null,
+            "medianMae": null,
+            "medianReturn": null,
+            "signalsPerMonth": null,
+            "baseRate": 0.3956043956043956
+          },
+          "testMetrics": {
+            "labeled": 25,
+            "signals": 0,
+            "tp": 0,
+            "fp": 0,
+            "fn": 5,
+            "tn": 20,
+            "precision": null,
+            "recall": 0,
+            "specificity": 1,
+            "fpr": 0,
+            "fnr": 1,
+            "f1": null,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": null,
+            "medianMae": null,
+            "medianReturn": null,
+            "signalsPerMonth": null,
+            "baseRate": 0.2
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "B1",
+          "chosen": null,
+          "trainMetrics": {
+            "labeled": 91,
+            "signals": 91,
+            "tp": 36,
+            "fp": 55,
+            "fn": 0,
+            "tn": 0,
+            "precision": 0.3956043956043956,
+            "recall": 1,
+            "specificity": 0,
+            "fpr": 1,
+            "fnr": 0,
+            "f1": 0.5669291338582677,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 6.953049703979097,
+            "medianMae": -5.040957781978572,
+            "medianReturn": -1.3590844062946972,
+            "signalsPerMonth": 4.170700125470514,
+            "baseRate": 0.3956043956043956
+          },
+          "testMetrics": {
+            "labeled": 25,
+            "signals": 25,
+            "tp": 5,
+            "fp": 20,
+            "fn": 0,
+            "tn": 0,
+            "precision": 0.2,
+            "recall": 1,
+            "specificity": 0,
+            "fpr": 1,
+            "fnr": 0,
+            "f1": 0.33333333333333337,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 3.6318540171848657,
+            "medianMae": -6.189505858380029,
+            "medianReturn": -2.5006722237160495,
+            "signalsPerMonth": 4.344433872502379,
+            "baseRate": 0.2
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M1",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 91,
+            "signals": 87,
+            "tp": 35,
+            "fp": 52,
+            "fn": 1,
+            "tn": 3,
+            "precision": 0.40229885057471265,
+            "recall": 0.9722222222222222,
+            "specificity": 0.05454545454545454,
+            "fpr": 0.9454545454545454,
+            "fnr": 0.027777777777777776,
+            "f1": 0.5691056910569106,
+            "prAuc": 0.419175006156678,
+            "rocAuc": 0.5262626262626262,
+            "aucNote": null,
+            "medianMfe": 7.111813512445675,
+            "medianMae": -5.040957781978572,
+            "medianReturn": -1.3590844062946972,
+            "signalsPerMonth": 3.9873726474278546,
+            "baseRate": 0.3956043956043956
+          },
+          "testMetrics": {
+            "labeled": 25,
+            "signals": 25,
+            "tp": 5,
+            "fp": 20,
+            "fn": 0,
+            "tn": 0,
+            "precision": 0.2,
+            "recall": 1,
+            "specificity": 0,
+            "fpr": 1,
+            "fnr": 0,
+            "f1": 0.33333333333333337,
+            "prAuc": 0.35250000000000004,
+            "rocAuc": 0.5,
+            "aucNote": null,
+            "medianMfe": 3.6318540171848657,
+            "medianMae": -6.189505858380029,
+            "medianReturn": -2.5006722237160495,
+            "signalsPerMonth": 4.344433872502379,
+            "baseRate": 0.2
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M2",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 91,
+            "signals": 85,
+            "tp": 35,
+            "fp": 50,
+            "fn": 1,
+            "tn": 5,
+            "precision": 0.4117647058823529,
+            "recall": 0.9722222222222222,
+            "specificity": 0.09090909090909091,
+            "fpr": 0.9090909090909091,
+            "fnr": 0.027777777777777776,
+            "f1": 0.5785123966942148,
+            "prAuc": 0.4793179710521528,
+            "rocAuc": 0.5202020202020202,
+            "aucNote": null,
+            "medianMfe": 7.111813512445675,
+            "medianMae": -5.040957781978572,
+            "medianReturn": -1.601537475976944,
+            "signalsPerMonth": 3.895708908406524,
+            "baseRate": 0.3956043956043956
+          },
+          "testMetrics": {
+            "labeled": 25,
+            "signals": 23,
+            "tp": 3,
+            "fp": 20,
+            "fn": 2,
+            "tn": 0,
+            "precision": 0.13043478260869565,
+            "recall": 0.6,
+            "specificity": 0,
+            "fpr": 1,
+            "fnr": 0.4,
+            "f1": 0.21428571428571427,
+            "prAuc": 0.20645021645021644,
+            "rocAuc": 0.44,
+            "aucNote": null,
+            "medianMfe": 3.2387706855791842,
+            "medianMae": -6.424792139077851,
+            "medianReturn": -2.532702477038673,
+            "signalsPerMonth": 4.004499523355577,
+            "baseRate": 0.2
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M3",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 91,
+            "signals": 80,
+            "tp": 33,
+            "fp": 47,
+            "fn": 3,
+            "tn": 8,
+            "precision": 0.4125,
+            "recall": 0.9166666666666666,
+            "specificity": 0.14545454545454545,
+            "fpr": 0.8545454545454545,
+            "fnr": 0.08333333333333333,
+            "f1": 0.5689655172413793,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 7.351989004671555,
+            "medianMae": -5.046332281672916,
+            "medianReturn": -1.655582865614208,
+            "signalsPerMonth": 3.6665495608531993,
+            "baseRate": 0.3956043956043956
+          },
+          "testMetrics": {
+            "labeled": 25,
+            "signals": 21,
+            "tp": 3,
+            "fp": 18,
+            "fn": 2,
+            "tn": 2,
+            "precision": 0.14285714285714285,
+            "recall": 0.6,
+            "specificity": 0.1,
+            "fpr": 0.9,
+            "fnr": 0.4,
+            "f1": 0.23076923076923073,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 3.2387706855791842,
+            "medianMae": -6.424792139077851,
+            "medianReturn": -3.555332999499261,
+            "signalsPerMonth": 3.65628217349857,
+            "baseRate": 0.2
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M4",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 91,
+            "signals": 80,
+            "tp": 33,
+            "fp": 47,
+            "fn": 3,
+            "tn": 8,
+            "precision": 0.4125,
+            "recall": 0.9166666666666666,
+            "specificity": 0.14545454545454545,
+            "fpr": 0.8545454545454545,
+            "fnr": 0.08333333333333333,
+            "f1": 0.5689655172413793,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 7.351989004671555,
+            "medianMae": -5.046332281672916,
+            "medianReturn": -1.655582865614208,
+            "signalsPerMonth": 3.6665495608531993,
+            "baseRate": 0.3956043956043956
+          },
+          "testMetrics": {
+            "labeled": 25,
+            "signals": 21,
+            "tp": 3,
+            "fp": 18,
+            "fn": 2,
+            "tn": 2,
+            "precision": 0.14285714285714285,
+            "recall": 0.6,
+            "specificity": 0.1,
+            "fpr": 0.9,
+            "fnr": 0.4,
+            "f1": 0.23076923076923073,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 3.2387706855791842,
+            "medianMae": -6.424792139077851,
+            "medianReturn": -3.555332999499261,
+            "signalsPerMonth": 3.65628217349857,
+            "baseRate": 0.2
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        },
+        {
+          "model": "M5",
+          "chosen": {
+            "volumeMin": 1,
+            "setupMin": 40,
+            "distanceMin": 0,
+            "riskMax": 20
+          },
+          "trainMetrics": {
+            "labeled": 91,
+            "signals": 50,
+            "tp": 29,
+            "fp": 21,
+            "fn": 7,
+            "tn": 34,
+            "precision": 0.58,
+            "recall": 0.8055555555555556,
+            "specificity": 0.6181818181818182,
+            "fpr": 0.38181818181818183,
+            "fnr": 0.19444444444444445,
+            "f1": 0.6744186046511629,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 13.299733743453512,
+            "medianMae": -2.3236258738562885,
+            "medianReturn": 4.99073878384948,
+            "signalsPerMonth": 2.2915934755332494,
+            "baseRate": 0.3956043956043956
+          },
+          "testMetrics": {
+            "labeled": 25,
+            "signals": 8,
+            "tp": 2,
+            "fp": 6,
+            "fn": 3,
+            "tn": 14,
+            "precision": 0.25,
+            "recall": 0.4,
+            "specificity": 0.7,
+            "fpr": 0.3,
+            "fnr": 0.6,
+            "f1": 0.3076923076923077,
+            "prAuc": null,
+            "rocAuc": null,
+            "aucNote": "二元过滤模型无自然排序分，AUC 不适用",
+            "medianMfe": 3.866194160522962,
+            "medianMae": -6.2210497221853345,
+            "medianReturn": -5.1258809912462455,
+            "signalsPerMonth": 1.5576972281449895,
+            "baseRate": 0.2
+          },
+          "gridsUsed": {
+            "volumeRatio": [
+              1,
+              1.5,
+              2,
+              3
+            ],
+            "setupScore": [
+              40,
+              50,
+              60
+            ],
+            "distancePct": [
+              0,
+              0.5
+            ],
+            "riskMax": [
+              20,
+              30
+            ]
+          },
+          "selectedOnTrainOnly": true
+        }
+      ]
+    }
+  ]
+}

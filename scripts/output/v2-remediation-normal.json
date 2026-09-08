@@ -1,0 +1,377 @@
+{
+  "generatedAt": "2026-09-08T00:50:42.274Z",
+  "PEPE": {
+    "total48hWindows": 383,
+    "scoredWindows": 379,
+    "buildingSetup": 159,
+    "nearBreakout": 109,
+    "falseAlarmBuilding": 0.4195,
+    "falseAlarmNear": 0.2876,
+    "perMonthAvgBuilding": 5.48,
+    "perMonthAvgNear": 3.76,
+    "monthsCovered": 29,
+    "perMonth": [
+      {
+        "month": "2024-04",
+        "windows": 10,
+        "building": 5,
+        "near": 3
+      },
+      {
+        "month": "2024-05",
+        "windows": 11,
+        "building": 3,
+        "near": 7
+      },
+      {
+        "month": "2024-06",
+        "windows": 14,
+        "building": 7,
+        "near": 2
+      },
+      {
+        "month": "2024-07",
+        "windows": 14,
+        "building": 7,
+        "near": 4
+      },
+      {
+        "month": "2024-08",
+        "windows": 14,
+        "building": 5,
+        "near": 4
+      },
+      {
+        "month": "2024-09",
+        "windows": 12,
+        "building": 9,
+        "near": 3
+      },
+      {
+        "month": "2024-10",
+        "windows": 15,
+        "building": 4,
+        "near": 6
+      },
+      {
+        "month": "2024-11",
+        "windows": 13,
+        "building": 6,
+        "near": 5
+      },
+      {
+        "month": "2024-12",
+        "windows": 13,
+        "building": 3,
+        "near": 6
+      },
+      {
+        "month": "2025-01",
+        "windows": 13,
+        "building": 5,
+        "near": 3
+      },
+      {
+        "month": "2025-02",
+        "windows": 14,
+        "building": 6,
+        "near": 2
+      },
+      {
+        "month": "2025-03",
+        "windows": 13,
+        "building": 5,
+        "near": 2
+      },
+      {
+        "month": "2025-04",
+        "windows": 12,
+        "building": 2,
+        "near": 5
+      },
+      {
+        "month": "2025-05",
+        "windows": 13,
+        "building": 5,
+        "near": 5
+      },
+      {
+        "month": "2025-06",
+        "windows": 13,
+        "building": 7,
+        "near": 2
+      },
+      {
+        "month": "2025-07",
+        "windows": 11,
+        "building": 4,
+        "near": 3
+      },
+      {
+        "month": "2025-08",
+        "windows": 14,
+        "building": 8,
+        "near": 1
+      },
+      {
+        "month": "2025-09",
+        "windows": 13,
+        "building": 6,
+        "near": 5
+      },
+      {
+        "month": "2025-10",
+        "windows": 14,
+        "building": 6,
+        "near": 3
+      },
+      {
+        "month": "2025-11",
+        "windows": 15,
+        "building": 6,
+        "near": 3
+      },
+      {
+        "month": "2025-12",
+        "windows": 13,
+        "building": 8,
+        "near": 3
+      },
+      {
+        "month": "2026-01",
+        "windows": 14,
+        "building": 7,
+        "near": 3
+      },
+      {
+        "month": "2026-02",
+        "windows": 13,
+        "building": 4,
+        "near": 4
+      },
+      {
+        "month": "2026-03",
+        "windows": 14,
+        "building": 9,
+        "near": 1
+      },
+      {
+        "month": "2026-04",
+        "windows": 10,
+        "building": 2,
+        "near": 5
+      },
+      {
+        "month": "2026-05",
+        "windows": 12,
+        "building": 6,
+        "near": 2
+      },
+      {
+        "month": "2026-06",
+        "windows": 14,
+        "building": 5,
+        "near": 4
+      },
+      {
+        "month": "2026-07",
+        "windows": 14,
+        "building": 5,
+        "near": 6
+      },
+      {
+        "month": "2026-08",
+        "windows": 14,
+        "building": 4,
+        "near": 7
+      }
+    ]
+  },
+  "DOGE": {
+    "total48hWindows": 385,
+    "scoredWindows": 381,
+    "buildingSetup": 155,
+    "nearBreakout": 129,
+    "falseAlarmBuilding": 0.4068,
+    "falseAlarmNear": 0.3386,
+    "perMonthAvgBuilding": 5.34,
+    "perMonthAvgNear": 4.45,
+    "monthsCovered": 29,
+    "perMonth": [
+      {
+        "month": "2024-04",
+        "windows": 11,
+        "building": 4,
+        "near": 4
+      },
+      {
+        "month": "2024-05",
+        "windows": 12,
+        "building": 7,
+        "near": 3
+      },
+      {
+        "month": "2024-06",
+        "windows": 15,
+        "building": 5,
+        "near": 6
+      },
+      {
+        "month": "2024-07",
+        "windows": 14,
+        "building": 6,
+        "near": 5
+      },
+      {
+        "month": "2024-08",
+        "windows": 12,
+        "building": 5,
+        "near": 3
+      },
+      {
+        "month": "2024-09",
+        "windows": 11,
+        "building": 6,
+        "near": 4
+      },
+      {
+        "month": "2024-10",
+        "windows": 13,
+        "building": 6,
+        "near": 4
+      },
+      {
+        "month": "2024-11",
+        "windows": 12,
+        "building": 5,
+        "near": 5
+      },
+      {
+        "month": "2024-12",
+        "windows": 14,
+        "building": 7,
+        "near": 4
+      },
+      {
+        "month": "2025-01",
+        "windows": 13,
+        "building": 5,
+        "near": 2
+      },
+      {
+        "month": "2025-02",
+        "windows": 13,
+        "building": 6,
+        "near": 2
+      },
+      {
+        "month": "2025-03",
+        "windows": 13,
+        "building": 5,
+        "near": 3
+      },
+      {
+        "month": "2025-04",
+        "windows": 13,
+        "building": 5,
+        "near": 5
+      },
+      {
+        "month": "2025-05",
+        "windows": 14,
+        "building": 3,
+        "near": 9
+      },
+      {
+        "month": "2025-06",
+        "windows": 13,
+        "building": 7,
+        "near": 3
+      },
+      {
+        "month": "2025-07",
+        "windows": 11,
+        "building": 5,
+        "near": 3
+      },
+      {
+        "month": "2025-08",
+        "windows": 14,
+        "building": 6,
+        "near": 4
+      },
+      {
+        "month": "2025-09",
+        "windows": 13,
+        "building": 4,
+        "near": 6
+      },
+      {
+        "month": "2025-10",
+        "windows": 12,
+        "building": 5,
+        "near": 4
+      },
+      {
+        "month": "2025-11",
+        "windows": 15,
+        "building": 4,
+        "near": 5
+      },
+      {
+        "month": "2025-12",
+        "windows": 16,
+        "building": 10,
+        "near": 3
+      },
+      {
+        "month": "2026-01",
+        "windows": 13,
+        "building": 4,
+        "near": 4
+      },
+      {
+        "month": "2026-02",
+        "windows": 12,
+        "building": 6,
+        "near": 1
+      },
+      {
+        "month": "2026-03",
+        "windows": 15,
+        "building": 7,
+        "near": 4
+      },
+      {
+        "month": "2026-04",
+        "windows": 11,
+        "building": 4,
+        "near": 7
+      },
+      {
+        "month": "2026-05",
+        "windows": 13,
+        "building": 7,
+        "near": 4
+      },
+      {
+        "month": "2026-06",
+        "windows": 15,
+        "building": 3,
+        "near": 5
+      },
+      {
+        "month": "2026-07",
+        "windows": 15,
+        "building": 7,
+        "near": 6
+      },
+      {
+        "month": "2026-08",
+        "windows": 13,
+        "building": 1,
+        "near": 11
+      }
+    ]
+  }
+}

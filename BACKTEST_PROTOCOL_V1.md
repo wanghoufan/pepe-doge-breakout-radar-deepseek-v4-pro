@@ -53,6 +53,8 @@
 - 后续优化必须在新 holdout 或新协议版本（`BACKTEST_PROTOCOL_V2.md`）下进行。
 
 ## 3. 冻结证据
-- 冻结 commit：（本文件提交后回填）。
+- 冻结 commit：`3d6ea05`（`feat(radar): V2 整改冻结提交`，含本协议 + 全部实现代码 + TEST 1–15；
+  Test 评估管线 `scripts/v2-remediation.ts` 在此之后首次运行，见各报告 `generatedAt`）。
+  回填本 hash 仅为元数据记录，不改变任何冻结参数。
 - 合规自检：`checkProtocolCompliance` 在管线入口执行；walk-forward 结果记录
   `selectedOnTrainOnly: true` 与实际使用网格（`WALK_FORWARD_REPORT.md`）。

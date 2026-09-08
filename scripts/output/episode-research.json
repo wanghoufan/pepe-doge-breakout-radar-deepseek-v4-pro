@@ -1,0 +1,1183 @@
+{
+  "generatedAt": "2026-09-08T00:50:33.099Z",
+  "config": {
+    "lookbackCandles": 42,
+    "volumeBaselineCandles": 42,
+    "cooldownCandles": 1
+  },
+  "rules": {},
+  "PEPE": {
+    "A-24H": {
+      "rawTriggers": 140,
+      "episodes": 63,
+      "inflation": 2.22,
+      "triggersPerEpisode": {
+        "mean": 2.22,
+        "median": 2,
+        "p90": 4,
+        "max": 8
+      },
+      "gapHours": {
+        "median": 252,
+        "p90": 648,
+        "max": 1588,
+        "le12h": 0
+      }
+    },
+    "A-48H": {
+      "rawTriggers": 140,
+      "episodes": 53,
+      "inflation": 2.64,
+      "triggersPerEpisode": {
+        "mean": 2.64,
+        "median": 2,
+        "p90": 6,
+        "max": 8
+      },
+      "gapHours": {
+        "median": 360,
+        "p90": 724,
+        "max": 1628,
+        "le12h": 0
+      }
+    },
+    "A-72H": {
+      "rawTriggers": 140,
+      "episodes": 46,
+      "inflation": 3.04,
+      "triggersPerEpisode": {
+        "mean": 3.04,
+        "median": 2,
+        "p90": 7,
+        "max": 8
+      },
+      "gapHours": {
+        "median": 436,
+        "p90": 840,
+        "max": 1628,
+        "le12h": 0
+      }
+    },
+    "A-7D": {
+      "rawTriggers": 140,
+      "episodes": 35,
+      "inflation": 4,
+      "triggersPerEpisode": {
+        "mean": 4,
+        "median": 3,
+        "p90": 8,
+        "max": 12
+      },
+      "gapHours": {
+        "median": 548,
+        "p90": 1164,
+        "max": 1628,
+        "le12h": 0
+      }
+    },
+    "B-range": {
+      "rawTriggers": 140,
+      "episodes": 42,
+      "inflation": 3.33,
+      "triggersPerEpisode": {
+        "mean": 3.33,
+        "median": 2,
+        "p90": 8,
+        "max": 15
+      },
+      "gapHours": {
+        "median": 264,
+        "p90": 1048,
+        "max": 3304,
+        "le12h": 1
+      }
+    },
+    "C-atr": {
+      "rawTriggers": 140,
+      "episodes": 39,
+      "inflation": 3.59,
+      "triggersPerEpisode": {
+        "mean": 3.59,
+        "median": 3,
+        "p90": 7,
+        "max": 8
+      },
+      "gapHours": {
+        "median": 468,
+        "p90": 956,
+        "max": 1628,
+        "le12h": 0
+      }
+    },
+    "D-hybrid(FROZEN)": {
+      "rawTriggers": 140,
+      "episodes": 59,
+      "inflation": 2.37,
+      "triggersPerEpisode": {
+        "mean": 2.37,
+        "median": 2,
+        "p90": 6,
+        "max": 8
+      },
+      "gapHours": {
+        "median": 264,
+        "p90": 724,
+        "max": 1588,
+        "le12h": 0
+      }
+    }
+  },
+  "PEPE_frozenEpisodes": [
+    {
+      "id": "EP-PEPE-001",
+      "startTs": 1713672000000,
+      "startIso": "2024-04-21T04:00:00.000Z",
+      "level": 0.000005973,
+      "triggers": 6,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-002",
+      "startTs": 1714694400000,
+      "startIso": "2024-05-03T00:00:00.000Z",
+      "level": 0.000007888,
+      "triggers": 1,
+      "resetReason": "hybrid(return-to-range)"
+    },
+    {
+      "id": "EP-PEPE-003",
+      "startTs": 1714780800000,
+      "startIso": "2024-05-04T00:00:00.000Z",
+      "level": 0.000008335,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-004",
+      "startTs": 1715601600000,
+      "startIso": "2024-05-13T12:00:00.000Z",
+      "level": 0.000008988,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-005",
+      "startTs": 1716292800000,
+      "startIso": "2024-05-21T12:00:00.000Z",
+      "level": 0.000011623,
+      "triggers": 4,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-006",
+      "startTs": 1716710400000,
+      "startIso": "2024-05-26T08:00:00.000Z",
+      "level": 0.000015869,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-007",
+      "startTs": 1719316800000,
+      "startIso": "2024-06-25T12:00:00.000Z",
+      "level": 0.000012254,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-008",
+      "startTs": 1721059200000,
+      "startIso": "2024-07-15T16:00:00.000Z",
+      "level": 0.000009856,
+      "triggers": 3,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-009",
+      "startTs": 1721404800000,
+      "startIso": "2024-07-19T16:00:00.000Z",
+      "level": 0.000012912,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-010",
+      "startTs": 1724428800000,
+      "startIso": "2024-08-23T16:00:00.000Z",
+      "level": 0.0000085,
+      "triggers": 3,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-011",
+      "startTs": 1726228800000,
+      "startIso": "2024-09-13T12:00:00.000Z",
+      "level": 0.000007605,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-012",
+      "startTs": 1726761600000,
+      "startIso": "2024-09-19T16:00:00.000Z",
+      "level": 0.000008079,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-013",
+      "startTs": 1727323200000,
+      "startIso": "2024-09-26T04:00:00.000Z",
+      "level": 0.00000879,
+      "triggers": 8,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-014",
+      "startTs": 1728936000000,
+      "startIso": "2024-10-14T20:00:00.000Z",
+      "level": 0.000010782,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-015",
+      "startTs": 1730923200000,
+      "startIso": "2024-11-06T20:00:00.000Z",
+      "level": 0.000009822,
+      "triggers": 3,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-016",
+      "startTs": 1731225600000,
+      "startIso": "2024-11-10T08:00:00.000Z",
+      "level": 0.000011653,
+      "triggers": 5,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-017",
+      "startTs": 1733054400000,
+      "startIso": "2024-12-01T12:00:00.000Z",
+      "level": 0.00002166,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-018",
+      "startTs": 1733587200000,
+      "startIso": "2024-12-07T16:00:00.000Z",
+      "level": 0.000023335,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-019",
+      "startTs": 1735632000000,
+      "startIso": "2024-12-31T08:00:00.000Z",
+      "level": 0.000019547,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-020",
+      "startTs": 1736956800000,
+      "startIso": "2025-01-15T16:00:00.000Z",
+      "level": 0.000018523,
+      "triggers": 2,
+      "resetReason": "hybrid(return-to-range)"
+    },
+    {
+      "id": "EP-PEPE-021",
+      "startTs": 1737100800000,
+      "startIso": "2025-01-17T08:00:00.000Z",
+      "level": 0.000019254,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-022",
+      "startTs": 1742817600000,
+      "startIso": "2025-03-24T12:00:00.000Z",
+      "level": 0.000007887,
+      "triggers": 2,
+      "resetReason": "hybrid(return-to-range)"
+    },
+    {
+      "id": "EP-PEPE-023",
+      "startTs": 1742961600000,
+      "startIso": "2025-03-26T04:00:00.000Z",
+      "level": 0.000008244,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-024",
+      "startTs": 1744459200000,
+      "startIso": "2025-04-12T12:00:00.000Z",
+      "level": 0.000007178,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-025",
+      "startTs": 1745193600000,
+      "startIso": "2025-04-21T00:00:00.000Z",
+      "level": 0.000007741,
+      "triggers": 6,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-026",
+      "startTs": 1745625600000,
+      "startIso": "2025-04-26T00:00:00.000Z",
+      "level": 0.000009309,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-027",
+      "startTs": 1746691200000,
+      "startIso": "2025-05-08T08:00:00.000Z",
+      "level": 0.000009089,
+      "triggers": 6,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-028",
+      "startTs": 1747008000000,
+      "startIso": "2025-05-12T00:00:00.000Z",
+      "level": 0.000014256,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-029",
+      "startTs": 1747944000000,
+      "startIso": "2025-05-22T20:00:00.000Z",
+      "level": 0.0000148,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-030",
+      "startTs": 1749542400000,
+      "startIso": "2025-06-10T08:00:00.000Z",
+      "level": 0.000012957,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-031",
+      "startTs": 1751227200000,
+      "startIso": "2025-06-29T20:00:00.000Z",
+      "level": 0.000010288,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-032",
+      "startTs": 1751515200000,
+      "startIso": "2025-07-03T04:00:00.000Z",
+      "level": 0.00001048,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-033",
+      "startTs": 1752076800000,
+      "startIso": "2025-07-09T16:00:00.000Z",
+      "level": 0.000010788,
+      "triggers": 5,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-034",
+      "startTs": 1752681600000,
+      "startIso": "2025-07-16T16:00:00.000Z",
+      "level": 0.000013507,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-035",
+      "startTs": 1753027200000,
+      "startIso": "2025-07-20T16:00:00.000Z",
+      "level": 0.000014348,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-036",
+      "startTs": 1754596800000,
+      "startIso": "2025-08-07T20:00:00.000Z",
+      "level": 0.00001105,
+      "triggers": 5,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-037",
+      "startTs": 1755892800000,
+      "startIso": "2025-08-22T20:00:00.000Z",
+      "level": 0.000011541,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-038",
+      "startTs": 1757318400000,
+      "startIso": "2025-09-08T08:00:00.000Z",
+      "level": 0.000010087,
+      "triggers": 4,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-039",
+      "startTs": 1757692800000,
+      "startIso": "2025-09-12T16:00:00.000Z",
+      "level": 0.000010844,
+      "triggers": 3,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-040",
+      "startTs": 1759334400000,
+      "startIso": "2025-10-01T16:00:00.000Z",
+      "level": 0.000009753,
+      "triggers": 4,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-041",
+      "startTs": 1764849600000,
+      "startIso": "2025-12-04T12:00:00.000Z",
+      "level": 0.000004897,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-042",
+      "startTs": 1766865600000,
+      "startIso": "2025-12-27T20:00:00.000Z",
+      "level": 0.000004179,
+      "triggers": 1,
+      "resetReason": "hybrid(return-to-range)"
+    },
+    {
+      "id": "EP-PEPE-043",
+      "startTs": 1766966400000,
+      "startIso": "2025-12-29T00:00:00.000Z",
+      "level": 0.000004262,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-044",
+      "startTs": 1767283200000,
+      "startIso": "2026-01-01T16:00:00.000Z",
+      "level": 0.000004326,
+      "triggers": 6,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-045",
+      "startTs": 1771056000000,
+      "startIso": "2026-02-14T08:00:00.000Z",
+      "level": 0.000003935,
+      "triggers": 4,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-046",
+      "startTs": 1773388800000,
+      "startIso": "2026-03-13T08:00:00.000Z",
+      "level": 0.000003527,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-047",
+      "startTs": 1773633600000,
+      "startIso": "2026-03-16T04:00:00.000Z",
+      "level": 0.000003676,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-048",
+      "startTs": 1775433600000,
+      "startIso": "2026-04-06T00:00:00.000Z",
+      "level": 0.000003527,
+      "triggers": 1,
+      "resetReason": "hybrid(return-to-range)"
+    },
+    {
+      "id": "EP-PEPE-049",
+      "startTs": 1775592000000,
+      "startIso": "2026-04-07T20:00:00.000Z",
+      "level": 0.000003633,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-050",
+      "startTs": 1776297600000,
+      "startIso": "2026-04-16T00:00:00.000Z",
+      "level": 0.000003849,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-051",
+      "startTs": 1777248000000,
+      "startIso": "2026-04-27T00:00:00.000Z",
+      "level": 0.000003984,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-052",
+      "startTs": 1777449600000,
+      "startIso": "2026-04-29T08:00:00.000Z",
+      "level": 0.000004023,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-053",
+      "startTs": 1778025600000,
+      "startIso": "2026-05-06T00:00:00.000Z",
+      "level": 0.000004228,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-054",
+      "startTs": 1778241600000,
+      "startIso": "2026-05-08T12:00:00.000Z",
+      "level": 0.000004273,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-055",
+      "startTs": 1778428800000,
+      "startIso": "2026-05-10T16:00:00.000Z",
+      "level": 0.000004367,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-056",
+      "startTs": 1781467200000,
+      "startIso": "2026-06-14T20:00:00.000Z",
+      "level": 0.00000289,
+      "triggers": 3,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-057",
+      "startTs": 1783065600000,
+      "startIso": "2026-07-03T08:00:00.000Z",
+      "level": 0.000002493,
+      "triggers": 3,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-058",
+      "startTs": 1785038400000,
+      "startIso": "2026-07-26T04:00:00.000Z",
+      "level": 0.000002976,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-PEPE-059",
+      "startTs": 1787169600000,
+      "startIso": "2026-08-19T20:00:00.000Z",
+      "level": 0.000002792,
+      "triggers": 7,
+      "resetReason": null
+    }
+  ],
+  "DOGE": {
+    "A-24H": {
+      "rawTriggers": 150,
+      "episodes": 59,
+      "inflation": 2.54,
+      "triggersPerEpisode": {
+        "mean": 2.54,
+        "median": 2,
+        "p90": 5,
+        "max": 9
+      },
+      "gapHours": {
+        "median": 256,
+        "p90": 804,
+        "max": 1612,
+        "le12h": 0
+      }
+    },
+    "A-48H": {
+      "rawTriggers": 150,
+      "episodes": 50,
+      "inflation": 3,
+      "triggersPerEpisode": {
+        "mean": 3,
+        "median": 2,
+        "p90": 6,
+        "max": 9
+      },
+      "gapHours": {
+        "median": 304,
+        "p90": 920,
+        "max": 1612,
+        "le12h": 0
+      }
+    },
+    "A-72H": {
+      "rawTriggers": 150,
+      "episodes": 46,
+      "inflation": 3.26,
+      "triggersPerEpisode": {
+        "mean": 3.26,
+        "median": 2,
+        "p90": 6,
+        "max": 14
+      },
+      "gapHours": {
+        "median": 340,
+        "p90": 920,
+        "max": 1612,
+        "le12h": 0
+      }
+    },
+    "A-7D": {
+      "rawTriggers": 150,
+      "episodes": 35,
+      "inflation": 4.29,
+      "triggersPerEpisode": {
+        "mean": 4.29,
+        "median": 3,
+        "p90": 8,
+        "max": 14
+      },
+      "gapHours": {
+        "median": 476,
+        "p90": 1040,
+        "max": 1644,
+        "le12h": 0
+      }
+    },
+    "B-range": {
+      "rawTriggers": 150,
+      "episodes": 26,
+      "inflation": 5.77,
+      "triggersPerEpisode": {
+        "mean": 5.77,
+        "median": 1,
+        "p90": 6,
+        "max": 94
+      },
+      "gapHours": {
+        "median": 256,
+        "p90": 1320,
+        "max": 10628,
+        "le12h": 1
+      }
+    },
+    "C-atr": {
+      "rawTriggers": 150,
+      "episodes": 38,
+      "inflation": 3.95,
+      "triggersPerEpisode": {
+        "mean": 3.95,
+        "median": 3,
+        "p90": 7,
+        "max": 14
+      },
+      "gapHours": {
+        "median": 456,
+        "p90": 1040,
+        "max": 1612,
+        "le12h": 0
+      }
+    },
+    "D-hybrid(FROZEN)": {
+      "rawTriggers": 150,
+      "episodes": 57,
+      "inflation": 2.63,
+      "triggersPerEpisode": {
+        "mean": 2.63,
+        "median": 2,
+        "p90": 6,
+        "max": 9
+      },
+      "gapHours": {
+        "median": 272,
+        "p90": 804,
+        "max": 1612,
+        "le12h": 0
+      }
+    }
+  },
+  "DOGE_frozenEpisodes": [
+    {
+      "id": "EP-DOGE-001",
+      "startTs": 1714809600000,
+      "startIso": "2024-05-04T08:00:00.000Z",
+      "level": 0.15243,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-002",
+      "startTs": 1715817600000,
+      "startIso": "2024-05-16T00:00:00.000Z",
+      "level": 0.15733,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-003",
+      "startTs": 1716235200000,
+      "startIso": "2024-05-20T20:00:00.000Z",
+      "level": 0.15933,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-004",
+      "startTs": 1720987200000,
+      "startIso": "2024-07-14T20:00:00.000Z",
+      "level": 0.1146,
+      "triggers": 5,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-005",
+      "startTs": 1721476800000,
+      "startIso": "2024-07-20T12:00:00.000Z",
+      "level": 0.12969,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-006",
+      "startTs": 1723334400000,
+      "startIso": "2024-08-11T00:00:00.000Z",
+      "level": 0.10944,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-007",
+      "startTs": 1724256000000,
+      "startIso": "2024-08-21T16:00:00.000Z",
+      "level": 0.10572,
+      "triggers": 1,
+      "resetReason": "hybrid(return-to-range)"
+    },
+    {
+      "id": "EP-DOGE-008",
+      "startTs": 1724414400000,
+      "startIso": "2024-08-23T12:00:00.000Z",
+      "level": 0.108,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-009",
+      "startTs": 1725897600000,
+      "startIso": "2024-09-09T16:00:00.000Z",
+      "level": 0.1008,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-010",
+      "startTs": 1726228800000,
+      "startIso": "2024-09-13T12:00:00.000Z",
+      "level": 0.10676,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-011",
+      "startTs": 1726920000000,
+      "startIso": "2024-09-21T12:00:00.000Z",
+      "level": 0.10749,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-012",
+      "startTs": 1727323200000,
+      "startIso": "2024-09-26T04:00:00.000Z",
+      "level": 0.11118,
+      "triggers": 6,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-013",
+      "startTs": 1728907200000,
+      "startIso": "2024-10-14T12:00:00.000Z",
+      "level": 0.11474,
+      "triggers": 1,
+      "resetReason": "hybrid(return-to-range)"
+    },
+    {
+      "id": "EP-DOGE-014",
+      "startTs": 1729051200000,
+      "startIso": "2024-10-16T04:00:00.000Z",
+      "level": 0.11936,
+      "triggers": 5,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-015",
+      "startTs": 1730131200000,
+      "startIso": "2024-10-28T16:00:00.000Z",
+      "level": 0.15129,
+      "triggers": 3,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-016",
+      "startTs": 1730851200000,
+      "startIso": "2024-11-06T00:00:00.000Z",
+      "level": 0.1799,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-017",
+      "startTs": 1731196800000,
+      "startIso": "2024-11-10T00:00:00.000Z",
+      "level": 0.22016,
+      "triggers": 9,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-018",
+      "startTs": 1732320000000,
+      "startIso": "2024-11-23T00:00:00.000Z",
+      "level": 0.42048,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-019",
+      "startTs": 1733616000000,
+      "startIso": "2024-12-08T00:00:00.000Z",
+      "level": 0.46689,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-020",
+      "startTs": 1735804800000,
+      "startIso": "2025-01-02T08:00:00.000Z",
+      "level": 0.33896,
+      "triggers": 1,
+      "resetReason": "hybrid(return-to-range)"
+    },
+    {
+      "id": "EP-DOGE-021",
+      "startTs": 1735891200000,
+      "startIso": "2025-01-03T08:00:00.000Z",
+      "level": 0.34499,
+      "triggers": 4,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-022",
+      "startTs": 1736899200000,
+      "startIso": "2025-01-15T00:00:00.000Z",
+      "level": 0.3624,
+      "triggers": 3,
+      "resetReason": "hybrid(return-to-range)"
+    },
+    {
+      "id": "EP-DOGE-023",
+      "startTs": 1737086400000,
+      "startIso": "2025-01-17T04:00:00.000Z",
+      "level": 0.39038,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-024",
+      "startTs": 1739520000000,
+      "startIso": "2025-02-14T08:00:00.000Z",
+      "level": 0.27015,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-025",
+      "startTs": 1742414400000,
+      "startIso": "2025-03-19T20:00:00.000Z",
+      "level": 0.17786,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-026",
+      "startTs": 1742817600000,
+      "startIso": "2025-03-24T12:00:00.000Z",
+      "level": 0.17918,
+      "triggers": 5,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-027",
+      "startTs": 1745294400000,
+      "startIso": "2025-04-22T04:00:00.000Z",
+      "level": 0.16371,
+      "triggers": 4,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-028",
+      "startTs": 1745625600000,
+      "startIso": "2025-04-26T00:00:00.000Z",
+      "level": 0.18615,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-029",
+      "startTs": 1746705600000,
+      "startIso": "2025-05-08T12:00:00.000Z",
+      "level": 0.18554,
+      "triggers": 6,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-030",
+      "startTs": 1747872000000,
+      "startIso": "2025-05-22T00:00:00.000Z",
+      "level": 0.23797,
+      "triggers": 3,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-031",
+      "startTs": 1749585600000,
+      "startIso": "2025-06-10T20:00:00.000Z",
+      "level": 0.19746,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-032",
+      "startTs": 1751227200000,
+      "startIso": "2025-06-29T20:00:00.000Z",
+      "level": 0.16806,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-033",
+      "startTs": 1751472000000,
+      "startIso": "2025-07-02T16:00:00.000Z",
+      "level": 0.16995,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-034",
+      "startTs": 1752091200000,
+      "startIso": "2025-07-09T20:00:00.000Z",
+      "level": 0.17768,
+      "triggers": 4,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-035",
+      "startTs": 1752796800000,
+      "startIso": "2025-07-18T00:00:00.000Z",
+      "level": 0.22256,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-036",
+      "startTs": 1753027200000,
+      "startIso": "2025-07-20T16:00:00.000Z",
+      "level": 0.258,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-037",
+      "startTs": 1754596800000,
+      "startIso": "2025-08-07T20:00:00.000Z",
+      "level": 0.21828,
+      "triggers": 5,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-038",
+      "startTs": 1755129600000,
+      "startIso": "2025-08-14T00:00:00.000Z",
+      "level": 0.25063,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-039",
+      "startTs": 1757246400000,
+      "startIso": "2025-09-07T12:00:00.000Z",
+      "level": 0.22349,
+      "triggers": 5,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-040",
+      "startTs": 1757548800000,
+      "startIso": "2025-09-11T00:00:00.000Z",
+      "level": 0.24953,
+      "triggers": 9,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-041",
+      "startTs": 1759334400000,
+      "startIso": "2025-10-01T16:00:00.000Z",
+      "level": 0.24636,
+      "triggers": 5,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-042",
+      "startTs": 1759752000000,
+      "startIso": "2025-10-06T12:00:00.000Z",
+      "level": 0.26529,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-043",
+      "startTs": 1761508800000,
+      "startIso": "2025-10-26T20:00:00.000Z",
+      "level": 0.20558,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-044",
+      "startTs": 1767312000000,
+      "startIso": "2026-01-02T00:00:00.000Z",
+      "level": 0.12803,
+      "triggers": 4,
+      "resetReason": "hybrid(return-to-range)"
+    },
+    {
+      "id": "EP-DOGE-045",
+      "startTs": 1767484800000,
+      "startIso": "2026-01-04T00:00:00.000Z",
+      "level": 0.14495,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-046",
+      "startTs": 1771056000000,
+      "startIso": "2026-02-14T08:00:00.000Z",
+      "level": 0.09943,
+      "triggers": 6,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-047",
+      "startTs": 1772035200000,
+      "startIso": "2026-02-25T16:00:00.000Z",
+      "level": 0.10262,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-048",
+      "startTs": 1773633600000,
+      "startIso": "2026-03-16T04:00:00.000Z",
+      "level": 0.10194,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-049",
+      "startTs": 1775592000000,
+      "startIso": "2026-04-07T20:00:00.000Z",
+      "level": 0.09449,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-050",
+      "startTs": 1776355200000,
+      "startIso": "2026-04-16T16:00:00.000Z",
+      "level": 0.098,
+      "triggers": 2,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-051",
+      "startTs": 1777248000000,
+      "startIso": "2026-04-27T00:00:00.000Z",
+      "level": 0.09988,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-052",
+      "startTs": 1777420800000,
+      "startIso": "2026-04-29T00:00:00.000Z",
+      "level": 0.10091,
+      "triggers": 3,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-053",
+      "startTs": 1777852800000,
+      "startIso": "2026-05-04T00:00:00.000Z",
+      "level": 0.1124,
+      "triggers": 1,
+      "resetReason": "hybrid(return-to-range)"
+    },
+    {
+      "id": "EP-DOGE-054",
+      "startTs": 1778011200000,
+      "startIso": "2026-05-05T20:00:00.000Z",
+      "level": 0.11444,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-055",
+      "startTs": 1783166400000,
+      "startIso": "2026-07-04T12:00:00.000Z",
+      "level": 0.07845,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-056",
+      "startTs": 1786478400000,
+      "startIso": "2026-08-11T20:00:00.000Z",
+      "level": 0.07154,
+      "triggers": 1,
+      "resetReason": "hybrid(staleness-48H)"
+    },
+    {
+      "id": "EP-DOGE-057",
+      "startTs": 1787140800000,
+      "startIso": "2026-08-19T12:00:00.000Z",
+      "level": 0.0722,
+      "triggers": 6,
+      "resetReason": null
+    }
+  ]
+}
