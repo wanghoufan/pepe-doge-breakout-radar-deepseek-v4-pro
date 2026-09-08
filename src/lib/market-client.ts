@@ -229,7 +229,7 @@ export interface OkxCandles {
   confirmedCandles: Candle[];
   /** 未收盘的盘中 K 线（仅展示，不参与任何判定）。 */
   intradayCandle: Candle | null;
-  /** 最后一根已收盘 K 线的 ts。 */
+  /** 最后一根已收盘 K 线的 openTs（Phase A：区间起点语义，closeTs = openTs + 4H，禁止直解为更新时间）。 */
   until: number | null;
   /** 行情实际抓取时间。 */
   fetchedAt: number;

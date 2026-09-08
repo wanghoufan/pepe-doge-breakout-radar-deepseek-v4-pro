@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { StateBadge } from '@/components/market/StateBadge';
 import { ActionCard } from '@/components/market/ActionCard';
 import { CandleChart } from '@/components/market/CandleChart';
-import { SourceLine, DiagBox, SourceFreshnessRow, type DiagLike } from '@/components/market/DataStatus';
+import { SourceLine, DiagBox, SourceFreshnessRow, CandleFreshnessBlock, type DiagLike } from '@/components/market/DataStatus';
 import type { Candle, AssetSignal, Timeframe } from '@/lib/types';
 import type { FeedFreshness } from '@/lib/freshness';
 import { ASSETS } from '@/lib/config';
@@ -19,7 +19,8 @@ import {
   TRIGGER_COPY,
   FOLLOW_THROUGH_COPY,
 } from '@/lib/action';
-import { formatPrice, formatPct, formatTs, relativeTime } from '@/lib/format';
+import { formatPrice, formatPct, formatTs, formatClock, relativeTime } from '@/lib/format';
+import { CANDLE_4H_MS } from '@/lib/time';
 import { cn } from '@/lib/utils';
 
 interface CandlesResp {
@@ -167,7 +168,8 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
           </div>
           <div className="text-[11px] text-muted-foreground">
             K 线：{candlesApi.data ? `OKX ${instId} ${tf}` : '请求中…'}
-            {lastConfirmedTs ? ` · 最后已收盘 ${formatTs(lastConfirmedTs)}` : ''}
+            {/* Phase A：open 语义输入，close 口径展示（禁止 openTs 直算）。 */}
+            {lastConfirmedTs ? ` · 最近4H收盘 ${formatTs(lastConfirmedTs + CANDLE_4H_MS)}（区间 ${formatClock(lastConfirmedTs)}–${formatClock(lastConfirmedTs + CANDLE_4H_MS)}）` : ''}
             {intraday ? (
               <span className="ml-1 text-warn">
                 · 盘中未收盘 {formatPrice(intraday.c)}（不构成突破确认）
@@ -183,6 +185,15 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
               lastConfirmedTs={overviewApi.data.data.lastConfirmedTs}
               prices={overviewApi.data.data.prices}
               fundingTs={overviewApi.data.fundingTs ?? null}
+            />
+          )}
+          {/* Phase A：现价与 K 线新鲜度分离显示（三行，全站统一口径）。 */}
+          {overviewApi.data && (
+            <CandleFreshnessBlock
+              coin={coin}
+              priceTs={price?.ts ?? null}
+              actualOpenTs={overviewApi.data.data.lastConfirmedTs[coin]}
+              now={overviewApi.data.generatedAt}
             />
           )}
         </CardContent>
@@ -298,7 +309,7 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
           )}
           {lastConfirmedTs && (
             <p className="mt-2 text-[11px] text-muted-foreground">
-              最后已收盘 K 线：{formatTs(lastConfirmedTs)}（UTC+8）
+              最近4H收盘：{formatTs(lastConfirmedTs + CANDLE_4H_MS)}（区间 {formatClock(lastConfirmedTs)}–{formatClock(lastConfirmedTs + CANDLE_4H_MS)}，UTC+8）
               {intraday ? `　盘中未收盘：${formatPrice(intraday.c)}（不参与判定）` : ''}
             </p>
           )}

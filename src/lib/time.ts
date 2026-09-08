@@ -52,9 +52,39 @@ export function floorTo4H(ts: number): number {
 /**
  * 判断一根 4H K 线在给定「当前时间 now」是否已经收盘。
  * 收盘时刻 = candle open ts + 4H。
+ *
+ * Phase A 统一语义（全仓唯一口径）：
+ * - candleOpenTs 是区间起点，K 线覆盖 [candleOpenTs, candleOpenTs + 4H)。
+ * - confirmed candle 的 candleCloseTs = openTs + 4H（见 candleCloseTs）。
+ * - 禁止把 openTs 直接解读为「最后更新时间」：展示「X 前收盘」必须用
+ *   now - candleCloseTs，而不是 now - candleOpenTs（后者会虚增 4h）。
  */
 export function isCandleClosed(candleOpenTs: number, now: number): boolean {
   return now >= candleOpenTs + CANDLE_4H_MS;
+}
+
+/**
+ * Phase A：confirmed candle 的收盘时间戳 = openTs + 4H。
+ * 仅对已收盘 K 线有意义；未收盘（形成中）K 线没有 closeTs，绝不能拿来确认突破。
+ */
+export function candleCloseTs(candleOpenTs: number): number {
+  return candleOpenTs + CANDLE_4H_MS;
+}
+
+/**
+ * Phase A：当前正在形成中的 4H K 线的 openTs（= floorTo4H(now)）。
+ * 这根 K 线未收盘，只作展示 / INTRABAR 提示，不参与任何突破判定与新鲜度 actual。
+ */
+export function current4HOpenTs(now: number): number {
+  return floorTo4H(now);
+}
+
+/**
+ * Phase A：期望的「最近一根已收盘」4H K 线 openTs = floorTo4H(now) - 4H。
+ * 新鲜度判定拿 actualLastConfirmedOpenTs 与它对比（见 freshness.ts）。
+ */
+export function expectedLastConfirmedOpenTs(now: number): number {
+  return floorTo4H(now) - CANDLE_4H_MS;
 }
 
 /**

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inspector } from 'react-dev-inspector';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
+import { AlertCenterHost } from '@/components/market/AlertCenter';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -26,8 +27,9 @@ export default function RootLayout({
       <body className="antialiased min-h-screen bg-background text-foreground">
         {isDev && <Inspector />}
         <SiteHeader />
-        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">{children}</main>
+        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6" id="radar-live">{children}</main>
         <SiteFooter />
+        <AlertCenterHost />
       </body>
     </html>
   );

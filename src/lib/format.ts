@@ -68,4 +68,15 @@ export function relativeTime(ts: number | null): string {
   return `${d} 天前`;
 }
 
+/** 时钟时间 HH:mm（Phase A：K 线区间展示全站一种，Asia/Shanghai）。 */
+export function formatClock(ts: number | null): string {
+  if (ts == null) return '—';
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(ts));
+}
+
 export const TZ_LABEL = 'UTC+8 · 北京时间';

@@ -11,7 +11,12 @@
  */
 import { analyzeAssetV2, computeBtcEnvironment } from './v2/engine';
 import { DEFAULT_CONFIG } from './config';
-import { deriveOverviewFreshness, type FeedFreshness } from './freshness';
+import {
+  deriveCandleOverviewFreshness,
+  deriveOverviewFreshness,
+  type CandleOverviewFreshness,
+  type FeedFreshness,
+} from './freshness';
 import { relativeReturn } from './relative-strength';
 import { getFunding, getOkxCandles, getOkxTickers, type FetchDiag } from './market-client';
 import type { AssetSignal, Candle } from './types';
@@ -55,6 +60,10 @@ export interface MarketOverview {
   pepe: AssetSignal | null;
   doge: AssetSignal | null;
   lastCandleTs: number | null;
+  /**
+   * 各币种最后已收盘 K 线 openTs（Phase A：open 语义 = 区间起点，
+   * 禁止直解为更新时间；closeTs = openTs + 4H，见 candle 字段）。
+   */
   lastConfirmedTs: { PEPE: number | null; DOGE: number | null; BTC: number | null };
   intraday: { PEPE: Candle | null; DOGE: Candle | null; BTC: Candle | null };
   prices: Record<'PEPE' | 'DOGE' | 'BTC', { last: number; ts: number } | null>;
@@ -66,6 +75,13 @@ export interface MarketOverview {
   fundingProvider: 'binance' | 'okx' | null;
   /** P0-1 三态新鲜度（ok/stale/unavailable）+ 最后有效更新；仅可靠性门控，不参与评分。 */
   freshness: FeedFreshness;
+  /**
+   * Phase A K 线新鲜度明细（期望收盘 Bar 对比口径）：
+   * current4HOpenTs / expectedLastConfirmedOpenTs(+CloseTs) /
+   * perCoin{lastConfirmedOpenTs/CloseTs, candleLagBars} /
+   * freshnessStatus(LIVE/STALE/UNAVAILABLE) / staleReason(编码)。
+   */
+  candle: CandleOverviewFreshness;
   /** P0-3 各币种资金费率末点 ts（无则 null，用于来源新鲜度行）。 */
   fundingTs: Record<'PEPE' | 'DOGE', number | null>;
 }
@@ -246,6 +262,8 @@ export async function getMarketOverview(): Promise<MarketOverview> {
     },
     now: generatedAt,
   });
+  // Phase A：K 线期望收盘 Bar 对比明细（与 freshness 同输入，供 API/UI 共用）。
+  const candle = deriveCandleOverviewFreshness(lastConfirmedTs, generatedAt);
 
   return {
     status,
@@ -263,6 +281,7 @@ export async function getMarketOverview(): Promise<MarketOverview> {
     fundingProvider,
     freshness,
     fundingTs,
+    candle,
   };
 }
 

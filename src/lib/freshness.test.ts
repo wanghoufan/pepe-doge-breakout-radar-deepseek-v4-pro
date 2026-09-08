@@ -126,7 +126,8 @@ test('P0-1g：overview K 线停更超 8h → stale', () => {
     overviewInput({ lastConfirmedTs: { PEPE: old, DOGE: old, BTC: old } }),
   );
   assert.equal(f.status, 'stale');
-  assert.equal(f.lastUpdatedTs, old);
+  // lastUpdatedTs 统一 close 口径（= openTs + 4H，直用 openTs 会虚增 4h，见 freshness.ts）。
+  assert.equal(f.lastUpdatedTs, old + H4);
 });
 
 test('P0-1h：overview feed 级失败 → unavailable（不降级为 stale）', () => {

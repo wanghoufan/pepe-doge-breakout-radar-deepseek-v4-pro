@@ -4,7 +4,7 @@ import { useApi } from '@/hooks/use-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SignalCard } from './SignalCard';
-import { SourceLine, DiagBox, SourceFreshnessRow } from './DataStatus';
+import { SourceLine, DiagBox, SourceFreshnessRow, CandleFreshnessBlock } from './DataStatus';
 import { formatPrice, formatPct, formatTs, relativeTime } from '@/lib/format';
 import type { FeedFreshness } from '@/lib/freshness';
 import type { AssetSignal, Candle } from '@/lib/types';
@@ -31,6 +31,17 @@ interface OverviewResp {
   fundingProvider: 'binance' | 'okx' | null;
   freshness?: FeedFreshness | null;
   fundingTs?: Record<'PEPE' | 'DOGE', number | null> | null;
+  // Phase A K 线新鲜度（期望收盘 Bar 对比口径，open/close 语义见 time.ts）。
+  candle?: {
+    current4HOpenTs: number;
+    expectedLastConfirmedOpenTs: number;
+    expectedLastConfirmedCloseTs: number;
+    lastConfirmedOpenTs: Record<'PEPE' | 'DOGE' | 'BTC', number | null>;
+    lastConfirmedCloseTs: Record<'PEPE' | 'DOGE' | 'BTC', number | null>;
+    candleLagBars: Record<'PEPE' | 'DOGE' | 'BTC', number | null>;
+    freshnessStatus: 'LIVE' | 'STALE' | 'UNAVAILABLE';
+    staleReason: string | null;
+  } | null;
   data: {
     btc: {
       symbol: string;
@@ -97,7 +108,14 @@ export function LiveRadar() {
       {data && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
           <SourceLine provider="okx" instId="PEPE/DOGE/BTC-USDT-SWAP" fetchedAt={data.generatedAt} />
-          <span>最后已收盘 4H K 线 {formatTs(data.data.lastCandleTs)}</span>
+          {data.candle ? (
+            <span>
+              最近4H收盘 {formatTs(data.candle.expectedLastConfirmedCloseTs)} · K线{data.candle.freshnessStatus}
+              {data.candle.staleReason ? `（${data.candle.staleReason}）` : ''}
+            </span>
+          ) : (
+            <span>最后已收盘 4H K 线 {formatTs(data.data.lastCandleTs)}</span>
+          )}
           <span>
             资金费率来源 {data.fundingProvider === 'okx' ? 'OKX（Binance 不可用）' : data.fundingProvider === 'binance' ? 'Binance' : '不可用'}
           </span>
@@ -114,6 +132,24 @@ export function LiveRadar() {
           prices={data.data.prices}
           fundingTs={data.fundingTs ?? null}
         />
+      )}
+
+      {/* Phase A：现价与 K 线新鲜度分离显示（三行 × PEPE/DOGE，全站统一口径）。 */}
+      {data && (
+        <div className="grid gap-3 md:grid-cols-2">
+          <CandleFreshnessBlock
+            coin="PEPE"
+            priceTs={data.data.prices?.PEPE?.ts ?? null}
+            actualOpenTs={data.data.lastConfirmedTs.PEPE}
+            now={data.generatedAt}
+          />
+          <CandleFreshnessBlock
+            coin="DOGE"
+            priceTs={data.data.prices?.DOGE?.ts ?? null}
+            actualOpenTs={data.data.lastConfirmedTs.DOGE}
+            now={data.generatedAt}
+          />
+        </div>
       )}
 
       {!live && (
