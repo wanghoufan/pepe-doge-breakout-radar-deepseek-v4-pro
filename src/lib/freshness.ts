@@ -38,7 +38,7 @@ export const CANDLE_STALE_AFTER_MS = 8 * 3_600_000;
 /** 资金费率链路判 stale 的最大允许年龄（相对 K 线末根，24h ≈ 漏 3 期）。 */
 export const FUNDING_STALE_AFTER_MS = 24 * 3_600_000;
 
-function isValidTs(v: number | null): v is number {
+function isValidTs(v: number | null | undefined): v is number {
   return typeof v === 'number' && Number.isFinite(v) && v > 0;
 }
 
@@ -171,7 +171,7 @@ export interface CandleOverviewFreshness {
   current4HOpenTs: number;
   expectedLastConfirmedOpenTs: number;
   expectedLastConfirmedCloseTs: number;
-  perCoin: Record<'PEPE' | 'DOGE' | 'BTC', CandleFreshness>;
+  perCoin: Record<'PEPE' | 'DOGE' | 'BTC' | 'ETHFI', CandleFreshness>;
   /** 最差 lag（缺失币种不计入；全部缺失则为 null）。 */
   maxLagBars: number | null;
 }
@@ -181,7 +181,7 @@ export interface CandleOverviewFreshness {
  * 合并规则：任一 UNAVAILABLE → UNAVAILABLE；否则任一 STALE → STALE；否则 LIVE。
  */
 export function deriveCandleOverviewFreshness(
-  lastConfirmedOpenTs: { PEPE: number | null; DOGE: number | null; BTC: number | null },
+  lastConfirmedOpenTs: { PEPE: number | null; DOGE: number | null; BTC: number | null; ETHFI?: number | null },
   now: number = Date.now(),
   graceMs: number = CANDLE_FRESHNESS_GRACE_MS,
 ): CandleOverviewFreshness {
@@ -189,8 +189,15 @@ export function deriveCandleOverviewFreshness(
     PEPE: assessCandleFreshness(lastConfirmedOpenTs.PEPE, now, graceMs),
     DOGE: assessCandleFreshness(lastConfirmedOpenTs.DOGE, now, graceMs),
     BTC: assessCandleFreshness(lastConfirmedOpenTs.BTC, now, graceMs),
+    // ETHFI：键存在即纳入合并（与 PEPE/DOGE 同口径，null → UNAVAILABLE 不沿用旧信号）；
+    // 键缺席（旧调用）时按期望 Bar 占位 LIVE，不改变既有三币判定。
+    ETHFI: assessCandleFreshness(
+      'ETHFI' in lastConfirmedOpenTs ? (lastConfirmedOpenTs.ETHFI ?? null) : expectedLastConfirmedOpenTs(now),
+      now,
+      graceMs,
+    ),
   };
-  const list = [perCoin.PEPE, perCoin.DOGE, perCoin.BTC];
+  const list = [perCoin.PEPE, perCoin.DOGE, perCoin.BTC, ...('ETHFI' in lastConfirmedOpenTs ? [perCoin.ETHFI] : [])];
   const status: CandleFreshnessStatus = list.some((c) => c.status === 'UNAVAILABLE')
     ? 'UNAVAILABLE'
     : list.some((c) => c.status === 'STALE')
@@ -216,6 +223,22 @@ export function deriveCandleOverviewFreshness(
 
 /* ---------------- Phase A：全站统一文案（唯一口径） ---------------- */
 
+/**
+ * HIGH-3：来源新鲜度汇总（纯函数，供 badge 收敛一处用）。
+ * 桌面留三行（CandleFreshnessBlock），badge 行收敛为一行摘要 + title tooltip 全明细。
+ */
+export function summarizeSourceFreshness(items: { label: string; status: 'ok' | 'stale' | 'unavailable'; detail: string }[]): {
+  summary: string;
+  title: string;
+} {
+  const ok = items.filter((i) => i.status === 'ok').length;
+  const bad = items.filter((i) => i.status !== 'ok');
+  const summary =
+    bad.length === 0 ? `来源新鲜度：${ok}/${items.length} 路正常` : `来源新鲜度：${ok}/${items.length} 路正常 · ${bad.length} 路异常`;
+  const title = items.map((i) => `${i.label} · ${i.status} · ${i.detail}`).join('\n');
+  return { summary, title };
+}
+
 /** 中文时长（展示「最近收盘 X」用，输入为毫秒）。 */
 export function formatAgeCn(ms: number): string {
   if (!Number.isFinite(ms) || ms < 0) ms = 0;
@@ -234,7 +257,7 @@ export function formatAgeCn(ms: number): string {
  * 禁止用 openTs 直算：年龄 = now - closeTs（= openTs + 4H）。
  */
 export function candleMainCopy(
-  coin: 'PEPE' | 'DOGE' | 'BTC',
+  coin: 'PEPE' | 'DOGE' | 'BTC' | 'ETHFI',
   actualLastConfirmedOpenTs: number | null,
   now: number,
   status: CandleFreshnessStatus,
@@ -249,7 +272,7 @@ export function candleMainCopy(
  * 注意与 K 线行解耦：现价新鲜度走 ticker 时间戳，不吃 K 线收盘口径。
  */
 export function priceMainCopy(
-  coin: 'PEPE' | 'DOGE' | 'BTC',
+  coin: 'PEPE' | 'DOGE' | 'BTC' | 'ETHFI',
   priceTs: number | null,
   now: number,
   status: FeedStatus,
@@ -301,21 +324,21 @@ export function assessFeedFreshness(
 export function deriveOverviewFreshness(input: {
   okxOk: boolean;
   canAnalyze: boolean;
-  lastConfirmedTs: { PEPE: number | null; DOGE: number | null; BTC: number | null };
-  priceTs: { PEPE: number | null; DOGE: number | null; BTC: number | null };
+  lastConfirmedTs: { PEPE: number | null; DOGE: number | null; BTC: number | null; ETHFI?: number | null };
+  priceTs: { PEPE: number | null; DOGE: number | null; BTC: number | null; ETHFI?: number | null };
   now?: number;
 }): FeedFreshness {
   const now = input.now ?? Date.now();
   if (!input.okxOk || !input.canAnalyze) {
     return { status: 'unavailable', lastUpdatedTs: null, reason: '实时链路非 live，信号可能不是最新' };
   }
-  // Phase A：K 线链路（期望收盘 Bar 对比，三币同语义）。
+  // Phase A：K 线链路（期望收盘 Bar 对比，PEPE/DOGE/BTC/ETHFI 同语义；ETHFI 缺席时旧三币口径不变）。
   const candle = deriveCandleOverviewFreshness(input.lastConfirmedTs, now);
   if (candle.status === 'UNAVAILABLE') {
     return { status: 'unavailable', lastUpdatedTs: null, reason: '部分币种已收盘 K 线缺失，无法判定新鲜度' };
   }
-  // 现价链路（8h 年龄口径，与 K 线分离判定）。
-  const priceList = [input.priceTs.PEPE, input.priceTs.DOGE, input.priceTs.BTC];
+  // 现价链路（8h 年龄口径，与 K 线分离判定；ETHFI 键存在即纳入，null → unavailable）。
+  const priceList = [input.priceTs.PEPE, input.priceTs.DOGE, input.priceTs.BTC, ...('ETHFI' in input.priceTs ? [input.priceTs.ETHFI] : [])];
   if (priceList.some((v) => !isValidTs(v))) {
     return { status: 'unavailable', lastUpdatedTs: null, reason: '部分必需时间戳缺失，无法判定新鲜度' };
   }
@@ -327,7 +350,7 @@ export function deriveOverviewFreshness(input: {
     // lastUpdatedTs 统一 close 口径（= openTs + 4H，与 candleMainCopy 一致）：
     // openTs 是区间起点，直用会把年龄虚增 4h，此处禁止直用 openTs。
     const oldestCandleOpen = Math.min(
-      ...[input.lastConfirmedTs.PEPE, input.lastConfirmedTs.DOGE, input.lastConfirmedTs.BTC].filter(isValidTs),
+      ...[input.lastConfirmedTs.PEPE, input.lastConfirmedTs.DOGE, input.lastConfirmedTs.BTC, input.lastConfirmedTs.ETHFI].filter(isValidTs),
     );
     const oldestCandle = candleCloseTs(oldestCandleOpen);
     const oldest = Math.min(oldestCandle, oldestPrice);
@@ -347,10 +370,59 @@ export function deriveOverviewFreshness(input: {
   // ok 分支同上：lastUpdatedTs 取 close 口径（禁止直用 openTs，见上）。
   const oldestCandleOk = candleCloseTs(
     Math.min(
-      ...[input.lastConfirmedTs.PEPE, input.lastConfirmedTs.DOGE, input.lastConfirmedTs.BTC].filter(isValidTs),
+      ...[input.lastConfirmedTs.PEPE, input.lastConfirmedTs.DOGE, input.lastConfirmedTs.BTC, input.lastConfirmedTs.ETHFI].filter(isValidTs),
     ),
   );
   return { status: 'ok', lastUpdatedTs: Math.min(oldestCandleOk, oldestPrice), reason: null };
+}
+
+/**
+ * 单标的新鲜度（分标隔离口径，纯函数）。
+ * - ok=false（请求失败）或 ready=false（已收盘 K 线不足，不可分析）→ unavailable，不沿用旧信号。
+ * - K 线链路走期望收盘 Bar 对比（assessCandleFreshness）；现价链路走 8h 年龄口径。
+ * - 任一 STALE → stale；缺失 → unavailable；否则 ok。
+ * - 与 deriveOverviewFreshness 同判定标准，但只吃本标的键：任一标故障只降级自身。
+ * - funding 不阻塞（见 P0-2），此处不消费 funding。
+ */
+export function deriveCoinFreshness(input: {
+  ok: boolean;
+  ready: boolean;
+  lastConfirmedTs: number | null;
+  priceTs: number | null;
+  now?: number;
+}): FeedFreshness {
+  const now = input.now ?? Date.now();
+  if (!input.ok || !input.ready) {
+    return { status: 'unavailable', lastUpdatedTs: null, reason: '实时链路非 live，信号可能不是最新' };
+  }
+  const candle = assessCandleFreshness(input.lastConfirmedTs, now);
+  if (candle.status === 'UNAVAILABLE') {
+    return { status: 'unavailable', lastUpdatedTs: null, reason: '已收盘 K 线缺失，无法判定新鲜度' };
+  }
+  if (!isValidTs(input.priceTs)) {
+    return { status: 'unavailable', lastUpdatedTs: null, reason: '现价时间戳缺失，无法判定新鲜度' };
+  }
+  const priceTs = input.priceTs as number;
+  const priceAssessed = assessFeedFreshness(priceTs, now, CANDLE_STALE_AFTER_MS);
+  const candleFeed = candleStatusToFeed(candle.status);
+  if (candleFeed === 'stale' || priceAssessed.status === 'stale') {
+    // lastUpdatedTs 取 close 口径（openTs 是区间起点，禁止直用，见上）。
+    const oldest = Math.min(candleCloseTs(input.lastConfirmedTs as number), priceTs);
+    if (candleFeed === 'stale') {
+      return {
+        status: 'stale',
+        lastUpdatedTs: oldest,
+        reason: `最近已收盘 K 线落后期望 Bar ${candle.candleLagBars ?? '?'} 根（疑似停更）`,
+      };
+    }
+    return {
+      status: 'stale',
+      lastUpdatedTs: oldest,
+      reason: `最后有效更新距今超 ${Math.floor(CANDLE_STALE_AFTER_MS / 3_600_000)}h（疑似停更）`,
+    };
+  }
+  const oldestOk = Math.min(candleCloseTs(input.lastConfirmedTs as number), priceTs);
+  return { status: 'ok', lastUpdatedTs: oldestOk, reason: null };
 }
 
 /**

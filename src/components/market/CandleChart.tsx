@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import type { Candle } from '@/lib/types';
 import { emaSeries } from '@/lib/indicators';
-import { formatPrice, formatTs, formatCompact } from '@/lib/format';
+import { formatPricePlain, formatTs, formatCompact } from '@/lib/format';
 
 export interface ChartMarker {
   ts: number;
@@ -22,7 +22,8 @@ const COLORS = {
 
 const HEIGHT = 400;
 const VOLUME_H = 72;
-const PAD_RIGHT = 56;
+// LOW-13：Y 轴全小数标签更宽（与 MED-5 同解），56 → 96 防局促截断。
+const PAD_RIGHT = 96;
 const PAD_LEFT = 8;
 const PAD_TOP = 12;
 const PAD_BOTTOM = 20;
@@ -164,7 +165,7 @@ export function CandleChart({
           <g key={i}>
             <line x1={PAD_LEFT} x2={PAD_LEFT + chart.plotW} y1={t.y} y2={t.y} stroke="rgba(138,180,248,0.08)" strokeWidth="1" />
             <text x={PAD_LEFT + chart.plotW + 6} y={t.y + 3} fontSize="10" fill="#8593a6" className="tnum">
-              {formatPrice(t.v)}
+              {formatPricePlain(t.v)}
             </text>
           </g>
         ))}
@@ -257,14 +258,14 @@ export function CandleChart({
           <div className="tnum text-muted-foreground">{formatTs(hoverCandle.ts)}</div>
           <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5 tnum">
             <span className="text-muted-foreground">开</span>
-            <span>{formatPrice(hoverCandle.o)}</span>
+            <span>{formatPricePlain(hoverCandle.o)}</span>
             <span className="text-muted-foreground">高</span>
-            <span>{formatPrice(hoverCandle.h)}</span>
+            <span>{formatPricePlain(hoverCandle.h)}</span>
             <span className="text-muted-foreground">低</span>
-            <span>{formatPrice(hoverCandle.l)}</span>
+            <span>{formatPricePlain(hoverCandle.l)}</span>
             <span className="text-muted-foreground">收</span>
             <span style={{ color: hoverCandle.c >= hoverCandle.o ? COLORS.bull : COLORS.bear }}>
-              {formatPrice(hoverCandle.c)}
+              {formatPricePlain(hoverCandle.c)}
             </span>
             <span className="text-muted-foreground">额</span>
             <span>{formatCompact(hoverCandle.quoteVol)}</span>

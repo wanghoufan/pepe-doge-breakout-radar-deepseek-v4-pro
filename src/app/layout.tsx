@@ -7,11 +7,11 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'PEPE·DOGE 突破雷达',
+    default: 'PEPE·DOGE·ETHFI 突破雷达',
     template: '%s · 突破雷达',
   },
   description:
-    '基于历史市场事件的 PEPE / DOGE 突破观测雷达：以量化证据描述「此刻更像哪一段历史行情」，不构成任何投资建议。',
+    '基于历史市场事件的 PEPE / DOGE / ETHFI 突破观测雷达：以量化证据描述「此刻更像哪一段历史行情」，不构成任何投资建议。',
   robots: { index: true, follow: true },
 };
 

@@ -4,8 +4,8 @@ import { STATE_META, DEFAULT_V2_WEIGHTS } from '@/lib/config';
 import type { StateCode } from '@/lib/types';
 
 export const metadata: Metadata = {
-  title: '方法论与证据规则 · PEPE/DOGE 突破雷达',
-  description: '十态状态机、分层评分（环境/蓄势/突破结构/跟随/过热/硬否决）与 A/B/C/D 证据分层规则说明。',
+  title: '方法论与证据规则 · PEPE/DOGE/ETHFI 突破雷达',
+  description: '十态状态机、分层评分（环境/蓄势/突破结构/跟随/过热/硬否决）与 A/B/C/D 证据分层规则说明。ETHFI 与 PEPE/DOGE 同阈值同权重，暂无历史基线样本。',
 };
 
 const STATE_ORDER: StateCode[] = [
@@ -141,6 +141,7 @@ const DISCLOSURES = [
   '所有阈值、权重均为「候选」性质，已用 walk-forward 在样本外检验，但样本量有限，仍需持续滚动更新。',
   '实时行情受数据源可用性、延迟与口径影响；数据不可用时显式标记 DATA_UNAVAILABLE，绝不冒充实时行情。',
   '资金费率跨交易所口径不同，仅作拥挤度方向性参考；Funding / Open Interest / Liquidation 等衍生品指标为增强项，不影响核心链路。',
+  '覆盖标的：PEPE / DOGE / ETHFI（+ BTC 环境参照），三者同阈值同权重同状态机。ETHFI 研究指标（Precision/Recall/胜率类）暂为空缺：21 个历史事件无 ETHFI 基线样本，ETHFI 回测指标一律标注"未知/缺失"，禁编造（方案A延续）。',
 ];
 
 export default function MethodologyPage() {

@@ -24,7 +24,7 @@
 ### 1.1 抓取时间
 
 - `overview.generatedAt`（ms + UTC+8 可读）：
-- 各 `prices.*.ts`（PEPE / DOGE / BTC）：
+- 各 `prices.*.ts`（PEPE / DOGE / ETHFI / BTC）：
 - 抓取命令（例：`curl -s <prod>/api/market/overview`）及本地存档路径：
 
 ### 1.2 价格（现价 + ts）
@@ -33,17 +33,18 @@
 |---|---|---|---|
 | PEPE | | | |
 | DOGE | | | |
+| ETHFI | | | |
 | BTC | | | |
 
 ### 1.3 Candle（K 线时间戳）
 
-- `lastConfirmedTs`（PEPE / DOGE / BTC）：
+- `lastConfirmedTs`（PEPE / DOGE / BTC / ETHFI）：
 - `lastCandleTs`：
-- 4H 对齐检查（三币种同值？盘中 intraday 是否分离？）：
+- 4H 对齐检查（四币种同值？盘中 intraday 是否分离？）：
 
 ### 1.4 Funding（资金费率时间戳）
 
-- `fundingTs.PEPE` / `fundingTs.DOGE`：
+- `fundingTs.PEPE` / `fundingTs.DOGE` / `fundingTs.ETHFI`：
 - `fundingProvider`（binance / okx / null）：
 - funding 相对 K 线末根年龄（>24h 即 stale）：
 
@@ -55,14 +56,14 @@
 ### 1.6 Freshness（新鲜度三态）
 
 - `freshness.status`（ok / stale / unavailable）+ `reason` + `lastUpdatedTs`：
-- `SourceFreshnessRow` 8 路（K线×3 + 现价×3 + 资金费率×2）逐项：
+- `SourceFreshnessRow` 11 路（K线×4 + 现价×4 + 资金费率×3）逐项：
 - 生产 payload 有无 `freshness`/`fundingTs` 字段（无 = 生产仍为旧部署，铁证）：
 
 ---
 
 ## 2. Output 五件套（输出证据：按 ActionCard 结构）
 
-> 五件套 = ①当前行动 ②关键价格 ③为什么 ④接下来观察 ⑤新鲜度/数据状态。逐币种（PEPE / DOGE）各填一份。
+> 五件套 = ①当前行动 ②关键价格 ③为什么 ④接下来观察 ⑤新鲜度/数据状态。逐币种（PEPE / DOGE / ETHFI）各填一份。
 
 ### 2.1 【PEPE】
 
@@ -78,6 +79,15 @@
 （同 2.1 结构再填一份）
 
 - ① 当前行动：
+- ② 关键价格：
+- ③ 为什么：
+- ④ 接下来观察：
+- ⑤ 新鲜度/数据状态：
+- 附加：
+
+### 2.3 【ETHFI】
+
+（同 2.1 结构再填一份；ETHFI 研究指标 Precision/Recall/胜率类一律填"未知/缺失（21 事件无 ETHFI 基线，禁编造）"）
 - ② 关键价格：
 - ③ 为什么：
 - ④ 接下来观察：

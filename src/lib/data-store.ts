@@ -8,6 +8,7 @@
 import type { Candle } from './types';
 import type { EventMetrics } from './event-analysis';
 import { CAMPAIGNS } from './event-analysis';
+import { SNAPSHOT_KEYS } from './config';
 import eventMetricsRaw from '../data/event-metrics.json';
 import pepeRaw from '../data/candles/pepe-usdt-swap.json';
 import dogeRaw from '../data/candles/doge-usdt-swap.json';
@@ -26,6 +27,17 @@ interface RawCandle {
   baseVol: number;
   quoteVol: number;
 }
+
+/** 快照模块注册（静态 import，键唯一来源：config.SNAPSHOT_KEYS；null = 无基线快照）。 */
+const SNAPSHOT_CANDLES: Record<string, RawCandle[] | null> = {
+  'pepe-usdt-swap': pepeRaw as unknown as RawCandle[],
+  'doge-usdt-swap': dogeRaw as unknown as RawCandle[],
+  'btc-usdt-swap': btcRaw as unknown as RawCandle[],
+};
+const SNAPSHOT_FUNDING: Record<string, { ts: number; rate: number }[] | null> = {
+  '1000pepeusdt': pepeFundingRaw as unknown as { ts: number; rate: number }[],
+  dogeusdt: dogeFundingRaw as unknown as { ts: number; rate: number }[],
+};
 
 function toCandles(rows: RawCandle[]): Candle[] {
   return rows.map((r) => ({
@@ -79,28 +91,22 @@ export function getHistoricalEventById(id: string): HistoricalEvent | null {
   return getHistoricalEvents().find((e) => e.id === id) ?? null;
 }
 
-/** 历史 K 线快照（按币种）。 */
-export function getSnapshotCandles(coin: 'PEPE' | 'DOGE' | 'BTC'): Candle[] {
-  switch (coin) {
-    case 'PEPE':
-      return toCandles(pepeRaw as unknown as RawCandle[]);
-    case 'DOGE':
-      return toCandles(dogeRaw as unknown as RawCandle[]);
-    case 'BTC':
-      return toCandles(btcRaw as unknown as RawCandle[]);
-  }
+/** 历史 K 线快照（按币种，同路径查 config.SNAPSHOT_KEYS；ETHFI 无历史研究快照，返回空数组并由调用方按缺数据处理，禁编造）。 */
+export function getSnapshotCandles(coin: 'PEPE' | 'DOGE' | 'BTC' | 'ETHFI'): Candle[] {
+  const key = SNAPSHOT_KEYS[coin]?.candles;
+  const raw = key ? (SNAPSHOT_CANDLES[key] ?? null) : null;
+  if (!raw) return [];
+  return toCandles(raw);
 }
 
-export function getSnapshotFunding(coin: 'PEPE' | 'DOGE'): { ts: number; rate: number }[] {
-  const raw = (coin === 'PEPE' ? pepeFundingRaw : dogeFundingRaw) as unknown as {
-    ts: number;
-    rate: number;
-  }[];
-  return raw;
+export function getSnapshotFunding(coin: 'PEPE' | 'DOGE' | 'ETHFI'): { ts: number; rate: number }[] {
+  const key = SNAPSHOT_KEYS[coin]?.funding;
+  const raw = key ? (SNAPSHOT_FUNDING[key] ?? null) : null;
+  return raw ?? [];
 }
 
 /** 截取某事件窗口（含启动前 10 日）的 K 线，用于历史详情图表。 */
-export function getEventCandles(event: EventMetrics, coin: 'PEPE' | 'DOGE') {
+export function getEventCandles(event: EventMetrics, coin: 'PEPE' | 'DOGE' | 'ETHFI') {
   const candles = getSnapshotCandles(coin);
   const from = event.startTs - 10 * 86_400_000;
   const to = event.endTs;

@@ -83,7 +83,7 @@ export default async function HistoryDetailPage({
           <CardHeader>
             <CardTitle className="text-sm font-medium">启动前画像（蓄势窗口）</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-x-4 gap-y-3">
+          <CardContent className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
             <Metric label="启动前收益" value={formatPct(event.preReturnPct)} />
             <Metric label="启动前波动（ATR）" value={event.preAtrPct.toFixed(2) + '%'} />
             <Metric label="ATR 收缩比" value={event.compressionRatio.toFixed(2)} sub="越小越收缩" />
@@ -99,7 +99,7 @@ export default async function HistoryDetailPage({
           <CardHeader>
             <CardTitle className="text-sm font-medium">突破与跟随（V2 · 从 breakoutTs 起算）</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-x-4 gap-y-3">
+          <CardContent className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
             <Metric label="突破时点" value={event.breakoutTs ? formatTs(event.breakoutTs) : '未发生'} />
             <Metric label="突破延迟" value={event.breakoutDelayHours == null ? '—' : event.breakoutDelayHours.toFixed(0) + ' h'} />
             <Metric label="突破位" value={formatPrice(event.breakoutLevel)} />

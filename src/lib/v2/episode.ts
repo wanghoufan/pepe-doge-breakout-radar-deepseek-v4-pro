@@ -36,7 +36,7 @@ export interface EpisodeTrigger {
 export interface BreakoutEpisode {
   /** `EP-<COIN>-<序号>`（序号按 startTs 升序）。 */
   id: string;
-  coin: 'PEPE' | 'DOGE' | 'UNKNOWN';
+  coin: 'PEPE' | 'DOGE' | 'ETHFI' | 'UNKNOWN';
   /** episode start trigger（第一个 trigger）的 ts / 下标 / 突破位 / 收盘价。 */
   startTs: number;
   startIndex: number;

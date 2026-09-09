@@ -7,11 +7,11 @@ import { getHistoricalEvents } from '@/lib/data-store';
 import { ASSETS } from '@/lib/config';
 import { formatDate, formatPct } from '@/lib/format';
 
-const VALID = ['PEPE', 'DOGE'] as const;
+const VALID = ['PEPE', 'DOGE', 'ETHFI'] as const;
 type Coin = (typeof VALID)[number];
 
 export function generateStaticParams() {
-  return [{ coin: 'pepe' }, { coin: 'doge' }];
+  return [{ coin: 'pepe' }, { coin: 'doge' }, { coin: 'ethfi' }];
 }
 
 export async function generateMetadata({

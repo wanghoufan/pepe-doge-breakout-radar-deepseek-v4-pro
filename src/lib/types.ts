@@ -38,7 +38,7 @@ export interface DataPoint<T> {
   note?: string;
 }
 
-export type AssetId = 'PEPE' | 'DOGE' | 'BTC';
+export type AssetId = 'PEPE' | 'DOGE' | 'BTC' | 'ETHFI';
 
 export interface AssetMeta {
   id: AssetId;

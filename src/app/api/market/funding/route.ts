@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getFunding, type FundingCoin } from '@/lib/market-client';
+import { TRADE_COINS } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+/** 可查资金费率的标的（唯一来源：config.TRADE_COINS；BTC 无资金费率，不在列）。 */
+const FUNDING_COINS: readonly string[] = TRADE_COINS;
 
 /**
  * 资金费率：Binance 优先，失败自动切到 OKX 公开接口（同为实时数据，非快照）。
@@ -11,7 +15,7 @@ export const revalidate = 0;
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const coin = (url.searchParams.get('coin') ?? 'PEPE').toUpperCase();
-  if (coin !== 'PEPE' && coin !== 'DOGE') {
+  if (!FUNDING_COINS.includes(coin)) {
     return NextResponse.json({ ok: false, error: 'invalid_coin' }, { status: 400 });
   }
   const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? 30) || 30));

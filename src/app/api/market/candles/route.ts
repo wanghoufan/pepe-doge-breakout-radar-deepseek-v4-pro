@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getOkxCandles, type Coin } from '@/lib/market-client';
+import { MARKET_COINS } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const COINS: Coin[] = ['PEPE', 'DOGE', 'BTC'];
+const COINS: readonly string[] = MARKET_COINS;
 const BARS = ['1H', '4H', '1D'];
 
 /**

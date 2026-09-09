@@ -2,11 +2,11 @@
 
 ## 项目概述
 
-**PEPE/DOGE 突破雷达**——一个基于历史量化研究的行情观测型 Web 应用（V2）。它把研究包里的量化特征，转成一套**严格时点对齐、无未来数据污染、可实时、可回测、可区分成功/失败突破**的识别雷达：用 Rolling Breakout（42 根 4H 回看）+ EMA/ATR/量比/相对 BTC 强度/资金费率，把币种状态归入十态状态机，并拆成六层独立评分（环境闸门 → Setup → Trigger → Follow-through → Risk → Hard Veto）。
+**PEPE/DOGE/ETHFI 突破雷达**——一个基于历史量化研究的行情观测型 Web 应用（V2）。它把研究包里的量化特征，转成一套**严格时点对齐、无未来数据污染、可实时、可回测、可区分成功/失败突破**的识别雷达：用 Rolling Breakout（42 根 4H 回看）+ EMA/ATR/量比/相对 BTC 强度/资金费率，把币种状态归入十态状态机，并拆成六层独立评分（环境闸门 → Setup → Trigger → Follow-through → Risk → Hard Veto）。
 
 **关键边界（用户长期约束，勿违反）：**
-- 仅覆盖 PEPE 与 DOGE 两个标的 + BTC 作为环境参照，不扩展到其它币种。
-- **不输出面向交易决策的胜率、准确率、假突破概率或任何收益承诺**。回测指标（Precision/Recall/FPR/Success Rate/MFE/MAE）仅作为「样本外真实表现」的研究诚实性证据在方法论页呈现，并明确标注「不构成收益承诺、不构成交易建议」。**方案A（冻结）：研究指标（误报率/Precision/Recall/FPR/Success 率）仅离线研究用，不进入 ActionCard/实时信号/报警，不包装成胜率；ActionCard 只输出当前行动+证据，不输出任何概率化收益表述。**
+- 仅覆盖 PEPE、DOGE、ETHFI 三个标的 + BTC 作为环境参照，不扩展到其它币种（ETHFI 与 PEPE/DOGE 同阈值同权重同状态机，零改动接入）。
+- **不输出面向交易决策的胜率、准确率、假突破概率或任何收益承诺**。回测指标（Precision/Recall/FPR/Success Rate/MFE/MAE）仅作为「样本外真实表现」的研究诚实性证据在方法论页呈现，并明确标注「不构成收益承诺、不构成交易建议」。**方案A（冻结）：研究指标（误报率/Precision/Recall/FPR/Success 率）仅离线研究用，不进入 ActionCard/实时信号/报警，不包装成胜率；ActionCard 只输出当前行动+证据，不输出任何概率化收益表述。ETHFI 研究指标（Precision/Recall/胜率类）暂为空缺：21 个历史事件无 ETHFI 基线样本，一律标注"未知/缺失"，禁编造。**
 - 历史维度已纳入失败样本与普通行情对照窗口（全量突破扫描 217 个：成功 75 / 失败 142；普通窗口 PEPE 5 / DOGE 7），用于 walk-forward 样本外检验，不再只展示人工挑选的成功案例。
 - 这是独立产品，与「滚仓计算器」无关，禁止读取/合并其代码。
 
@@ -22,7 +22,7 @@
 src/
   lib/
     types.ts          # V2 核心数据模型：十态 StateCode、LayeredScore、BreakoutInfo、EnvironmentState、FeatureVectorV2、AssetSignal
-    config.ts         # 十态 STATE_META、V2 阈值(DEFAULT_V2_THRESHOLDS,分位优先)/权重(DEFAULT_V2_WEIGHTS)、ASSETS（集中管理，勿散落）
+    config.ts         # 十态 STATE_META、V2 阈值(DEFAULT_V2_THRESHOLDS,分位优先)/权重(DEFAULT_V2_WEIGHTS)、ASSETS（集中管理，勿散落；ETHFI 与 PEPE/DOGE 同阈值同权重）
     time.ts           # P0-1 时区统一：UTC 毫秒、parseCSTDate/parseISO、floorTo4H、收盘判定
     breakout.ts       # P0-2 Rolling Breakout：getRollingHigh/detectBreakoutAt/detectBreakout/detectAllBreakouts（实时/历史/回测共用）
     mfe-mae.ts        # P0-4 MFE/MAE（24/48/72h/7D，相对 breakoutClose，窗口不含突破 K 线）
@@ -42,8 +42,8 @@ src/
       backtest.ts     # walkForwardBacktest + computeMetrics + CANDIDATE_RULES
   app/
     page.tsx            # 总览：实时雷达 + 历史样本
-    asset/[coin]/page.tsx     # PEPE/DOGE 详情
-    history/page.tsx          # 历史样本矿场
+    asset/[coin]/page.tsx     # PEPE/DOGE/ETHFI 详情
+    history/page.tsx          # 历史样本矿场（21 事件：PEPE 11 + DOGE 10，ETHFI 暂无基线）
     history/[id]/page.tsx     # 历史事件详情（指标+MFE/MAE+窗口图+原始截图）
     similarity/page.tsx       # 相似性（历史特征空间 + 当前像谁）
     methodology/page.tsx      # 方法论：十态状态机 + 分层评分 + 证据规则
@@ -56,13 +56,13 @@ public/screenshots/    # 21 张原始截图，命名 P01..P11 / D01..D10
 
 ## 关键入口 / 接口清单
 
-页面路由：`/`、`/asset/pepe`、`/asset/doge`、`/history`、`/history/:id`、`/similarity`、`/methodology`
+页面路由：`/`、`/asset/pepe`、`/asset/doge`、`/asset/ethfi`、`/history`、`/history/:id`、`/similarity`、`/methodology`
 
 REST 接口（`app/api/**/route.ts`，前端统一相对路径调用 `/api/...`）：
 
 | 接口 | 说明 | 降级行为 |
 |---|---|---|
-| `GET /api/market/overview` | 环境闸门 + 双币种分层信号 | 无网返回 `{ok,status:'unavailable'}` + summary |
+| `GET /api/market/overview` | 环境闸门 + 三币种分层信号 | 无网返回 `{ok,status:'unavailable'}` + summary |
 | `GET /api/market/candles?coin=&bar=` | K 线 | 失败返回 503 + 真实诊断（不拿快照冒充实时） |
 | `GET /api/market/funding?coin=` | 资金费率 | 失败返回 503 + 真实诊断（不拿快照冒充实时） |
 | `GET /api/history` | 21 事件列表 | 纯本地，恒可用 |

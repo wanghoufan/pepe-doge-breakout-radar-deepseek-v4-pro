@@ -13,24 +13,29 @@
  * - 绝不返回模拟数据：失败就是失败，诊断说清楚原因。
  */
 import type { Candle } from './types';
+import { ASSETS } from './config';
 
 /** OKX 官方公开域名列表，按顺序尝试；前面的域名在某些地域被墙时自动回退。 */
 const OKX_HOSTS = ['https://www.okx.com', 'https://aws.okx.com'];
 const BINANCE_HOSTS = ['https://fapi.binance.com', 'https://fapi1.binance.com'];
 
+/** OKX 永续 instId（唯一来源：config.ASSETS，同路径覆盖 PEPE/DOGE/BTC/ETHFI，禁散落字面量）。 */
 const OKX_INST = {
-  PEPE: 'PEPE-USDT-SWAP',
-  DOGE: 'DOGE-USDT-SWAP',
-  BTC: 'BTC-USDT-SWAP',
+  PEPE: ASSETS.PEPE.instId,
+  DOGE: ASSETS.DOGE.instId,
+  BTC: ASSETS.BTC.instId,
+  ETHFI: ASSETS.ETHFI.instId,
 } as const;
 
+/** Binance 资金费率 symbol（唯一来源：config.ASSETS，含 1000PEPE 乘数口径）。 */
 const BINANCE_SYMBOL = {
-  PEPE: '1000PEPEUSDT',
-  DOGE: 'DOGEUSDT',
+  PEPE: ASSETS.PEPE.fundingBinanceSymbol,
+  DOGE: ASSETS.DOGE.fundingBinanceSymbol,
+  ETHFI: ASSETS.ETHFI.fundingBinanceSymbol,
 } as const;
 
-export type Coin = 'PEPE' | 'DOGE' | 'BTC';
-export type FundingCoin = 'PEPE' | 'DOGE';
+export type Coin = 'PEPE' | 'DOGE' | 'BTC' | 'ETHFI';
+export type FundingCoin = 'PEPE' | 'DOGE' | 'ETHFI';
 
 export const OKX_TIMEOUT_MS = 8000;
 export const BINANCE_TIMEOUT_MS = 8000;

@@ -9,6 +9,7 @@ const NAV = [
   { href: '/', label: '总览' },
   { href: '/asset/PEPE', label: 'PEPE' },
   { href: '/asset/DOGE', label: 'DOGE' },
+  { href: '/asset/ETHFI', label: 'ETHFI' },
   { href: '/history', label: '历史样本' },
   { href: '/similarity', label: '相似性' },
   { href: '/methodology', label: '方法论' },
@@ -31,7 +32,7 @@ export function SiteHeader() {
             <span className="h-2.5 w-2.5 rounded-full bg-radar shadow-[0_0_10px_2px_rgba(46,230,168,0.7)]" />
           </span>
           <span className="text-sm font-semibold tracking-wide">
-            PEPE·DOGE <span className="text-radar">突破雷达</span>
+            PEPE·DOGE·ETHFI <span className="text-radar">突破雷达</span>
           </span>
         </Link>
 

@@ -12,7 +12,7 @@ export function SiteFooter() {
           </p>
         </div>
         <div className="mt-4 flex flex-col gap-1 text-xs text-muted-foreground/70 sm:flex-row sm:items-center sm:justify-between">
-          <p>PEPE·DOGE 突破雷达 · 研究工具</p>
+          <p>PEPE·DOGE·ETHFI 突破雷达 · 研究工具</p>
           <p>数据：OKX / Binance（实时，部署后可接入）· 历史快照（本地）</p>
         </div>
       </div>

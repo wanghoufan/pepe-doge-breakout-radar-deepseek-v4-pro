@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { SimilarityView } from '@/components/market/SimilarityView';
 
 export const metadata: Metadata = {
-  title: '形态相似性 · PEPE/DOGE 突破雷达',
+  title: '形态相似性 · PEPE/DOGE/ETHFI 突破雷达',
   description: '基于启动前特征的 21 个历史突破事件形态相似性分析。',
 };
 

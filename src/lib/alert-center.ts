@@ -15,7 +15,8 @@
  */
 
 import type { ActionCode } from './action';
-import { formatPrice } from './format';
+import { formatPricePlain } from './format';
+import { DEFAULT_COIN_SWITCHES } from './config';
 
 /* ------------------------------------------------------------------ */
 /* 订阅                                                                */
@@ -44,7 +45,7 @@ export const DEFAULT_SUBSCRIPTIONS: Record<SubscribableAction, boolean> = {
   OVERHEATED: false,
 };
 
-export type AlertCoin = 'PEPE' | 'DOGE';
+export type AlertCoin = 'PEPE' | 'DOGE' | 'ETHFI';
 
 /* ------------------------------------------------------------------ */
 /* 严重级别                                                             */
@@ -60,6 +61,17 @@ export const ACTION_SEVERITY: Record<SubscribableAction, AlertSeverity> = {
   BREAKOUT_TRACK: 'IMPORTANT',
   RETEST_WATCH: 'IMPORTANT',
   REJECT: 'CRITICAL',
+};
+
+/**
+ * HIGH-2：严重度视觉区分（纯数据映射，无策略逻辑）。
+ * UI 层按 severity 取上边框/标题色，禁全同样式。
+ */
+export const ALERT_SEVERITY_STYLES: Record<AlertSeverity, { bar: string; title: string; badge: string }> = {
+  CRITICAL: { bar: 'border-l-bear', title: 'text-bear', badge: 'border-bear/40 bg-bear/10 text-bear' },
+  IMPORTANT: { bar: 'border-l-radar', title: 'text-radar', badge: 'border-radar/40 bg-radar/10 text-radar' },
+  WATCH: { bar: 'border-l-warn', title: 'text-warn', badge: 'border-warn/40 bg-warn/10 text-warn' },
+  INFO: { bar: 'border-l-btc', title: 'text-btc', badge: 'border-btc/40 bg-btc/10 text-btc' },
 };
 
 /* ------------------------------------------------------------------ */
@@ -112,10 +124,12 @@ export function buildAlertBody(
   levels?: { breakoutLevel?: number | null; invalidationLevel?: number | null },
 ): string {
   const base = ALERT_COPY[action].body;
-  const pricePart = price != null ? `当前价格 ${formatPrice(price)}。` : '当前价格未知。';
+  // MED-5：报警正文价格走 UI 显示层全小数（formatPricePlain），禁科学计数法；
+  // API 层原样透出口径不动（D1 另起，不碰）。
+  const pricePart = price != null ? `当前价格 ${formatPricePlain(price)}。` : '当前价格未知。';
   // C2：本轮突破位与结构失效位来自现有 Episode 信号（调用方传入 sig.breakout.level / sig.keyLevels.invalidation），
   // 无数据时诚实写"未知/待确认"，禁编数字。
-  const fmt = (v: number | null | undefined) => (v != null && Number.isFinite(v) ? formatPrice(v) : '未知（待确认）');
+  const fmt = (v: number | null | undefined) => (v != null && Number.isFinite(v) ? formatPricePlain(v) : '未知（待确认）');
   const levelPart = levels
     ? `本轮突破位 ${fmt(levels.breakoutLevel)}；结构失效位 ${fmt(levels.invalidationLevel)}。`
     : '';
@@ -376,7 +390,7 @@ export interface AlertSettings {
 
 export const DEFAULT_ALERT_SETTINGS: AlertSettings = {
   masterEnabled: true,
-  coins: { PEPE: true, DOGE: true },
+  coins: { ...DEFAULT_COIN_SWITCHES },
   subscriptions: { ...DEFAULT_SUBSCRIPTIONS },
   dismissMode: 'AUTO_DISMISS',
   autoDismissSecs: 30,
@@ -395,7 +409,7 @@ export function sanitizeSettings(raw: Omit<Partial<AlertSettings>, 'subscription
     volume: Math.min(100, Math.max(0, vol)),
     autoDismissSecs: ([10, 30, 60] as AutoDismissSecs[]).includes(v.autoDismissSecs) ? v.autoDismissSecs : 30,
     subscriptions: { ...DEFAULT_SUBSCRIPTIONS, ...(raw.subscriptions ?? {}) },
-    coins: { PEPE: true, DOGE: true, ...(raw.coins ?? {}) },
+    coins: { ...DEFAULT_COIN_SWITCHES, ...(raw.coins ?? {}) },
     channels: {
       modal: true,
       banner: true,

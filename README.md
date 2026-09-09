@@ -1,4 +1,4 @@
-# PEPE/DOGE 突破雷达
+# PEPE/DOGE/ETHFI 突破雷达
 
 基于历史量化研究的行情观测型 Web 应用（V2）。它把研究包里的量化特征，转成一套**严格时点对齐、无未来数据污染、可实时、可回测、可区分成功/失败突破**的观测雷达：持续追踪 PEPE 与 DOGE 的蓄势、临界、突破、跟随与失效状态，用六层独立评分（环境闸门 / Setup / Trigger / Follow-through / Risk / Hard Veto）+ 十态状态机代替模糊判断。
 

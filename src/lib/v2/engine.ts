@@ -40,7 +40,7 @@ import type {
 const CANDLES_PER_DAY = 6; // 4H
 
 export interface AnalyzeContextV2 {
-  /** 兄弟币种（PEPE↔DOGE）相对 BTC 的强度 %（ratio-based），用于板块广度。 */
+  /** 兄弟币种相对 BTC 的强度 %（ratio-based），用于板块广度。PEPE↔DOGE 互为 peer；ETHFI 取两者均值（仅环境广度输入，不触阈值/权重）。 */
   peerRelativeStrengthPct: number | null;
 }
 
@@ -823,7 +823,7 @@ export function analyzeAssetV2(
         bars,
         { ...DEFAULT_BREAKOUT_CONFIG, lookbackCandles: t.breakoutLookbackCandles },
         FROZEN_EPISODE_RULE,
-        asset === 'PEPE' || asset === 'DOGE' ? asset : 'UNKNOWN',
+        asset === 'PEPE' || asset === 'DOGE' || asset === 'ETHFI' ? asset : 'UNKNOWN',
       )
     : { episodeId: null, triggerIndexInEpisode: null, triggersInEpisode: null, isEpisodeStart: null };
 

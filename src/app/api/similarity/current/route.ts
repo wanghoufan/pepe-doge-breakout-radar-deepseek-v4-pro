@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server';
 import { getHistoricalEvents } from '@/lib/data-store';
 import { getMarketOverview } from '@/lib/market-service';
 import { currentFeatureVector, computeSimilarities, SIMILARITY_FEATURES } from '@/lib/similarity';
+import { BASELINE_COINS } from '@/lib/config';
 import type { EventMetrics } from '@/lib/event-analysis';
 import type { AssetId } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const VALID_COINS: AssetId[] = ['PEPE', 'DOGE'];
+/** 可查「当前像谁」的标的（唯一来源：有历史基线的标的；ETHFI 暂无基线，不在列）。 */
+const VALID_COINS: readonly string[] = BASELINE_COINS;
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);

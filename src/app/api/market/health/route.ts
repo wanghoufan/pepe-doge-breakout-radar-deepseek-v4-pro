@@ -6,9 +6,11 @@ import {
   getOkxFunding,
   getOkxTickers,
   MARKET_META,
+  type Coin,
   type FetchDiag,
   type FundingCoin,
 } from '@/lib/market-client';
+import { ASSETS, MARKET_COINS, TRADE_COINS } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -62,35 +64,54 @@ function probe(
 export async function GET() {
   const started = Date.now();
 
-  const [btc, pepe, doge, tickers, binancePepe, okxPepe, binanceDoge, okxDoge, fundingPepe, fundingDoge] =
-    await Promise.all([
-      getOkxCandles('BTC', '4H', 5),
-      getOkxCandles('PEPE', '4H', 5),
-      getOkxCandles('DOGE', '4H', 5),
-      getOkxTickers(['BTC', 'PEPE', 'DOGE']),
-      getBinanceFunding('PEPE' as FundingCoin, 5),
-      getOkxFunding('PEPE' as FundingCoin, 5),
-      getBinanceFunding('DOGE' as FundingCoin, 5),
-      getOkxFunding('DOGE' as FundingCoin, 5),
-      getFunding('PEPE' as FundingCoin, 5),
-      getFunding('DOGE' as FundingCoin, 5),
-    ]);
+  // 探测标的唯一来源：config（K 线/现价走 MARKET_COINS，资金费率走 TRADE_COINS，三币同路径）。
+  const candleCoins = [...MARKET_COINS] as Coin[];
+  const fundingCoins = [...TRADE_COINS] as FundingCoin[];
+
+  const [candles, tickers, binanceFundings, okxFundings, resolvedFundings] = await Promise.all([
+    Promise.all(candleCoins.map((c) => getOkxCandles(c, '4H', 5))),
+    getOkxTickers(candleCoins),
+    Promise.all(fundingCoins.map((c) => getBinanceFunding(c, 5))),
+    Promise.all(fundingCoins.map((c) => getOkxFunding(c, 5))),
+    Promise.all(fundingCoins.map((c) => getFunding(c, 5))),
+  ]);
+  const byCandle = new Map(candleCoins.map((c, i) => [c, candles[i]!] as const));
+  const byBinance = new Map(fundingCoins.map((c, i) => [c, binanceFundings[i]!] as const));
+  const byOkx = new Map(fundingCoins.map((c, i) => [c, okxFundings[i]!] as const));
+  const byResolved = new Map(fundingCoins.map((c, i) => [c, resolvedFundings[i]!] as const));
 
   const probes: ProbeResult[] = [
-    probe('okx:candles:BTC-USDT-SWAP:4H', 'okx', btc, btc.ok ? btc.data.confirmedCandles.at(-1) : undefined),
-    probe('okx:candles:PEPE-USDT-SWAP:4H', 'okx', pepe, pepe.ok ? pepe.data.confirmedCandles.at(-1) : undefined),
-    probe('okx:candles:DOGE-USDT-SWAP:4H', 'okx', doge, doge.ok ? doge.data.confirmedCandles.at(-1) : undefined),
-    probe('okx:tickers:BTC/PEPE/DOGE', 'okx', tickers, tickers.ok ? tickers.data : undefined),
-    probe('binance:funding:1000PEPEUSDT', 'binance', binancePepe, binancePepe.ok ? binancePepe.data.at(-1) : undefined),
-    probe('okx:funding:PEPE-USDT-SWAP', 'okx', okxPepe, okxPepe.ok ? okxPepe.data.at(-1) : undefined),
-    probe('binance:funding:DOGEUSDT', 'binance', binanceDoge, binanceDoge.ok ? binanceDoge.data.at(-1) : undefined),
-    probe('okx:funding:DOGE-USDT-SWAP', 'okx', okxDoge, okxDoge.ok ? okxDoge.data.at(-1) : undefined),
-    probe('funding:resolved:PEPE', fundingPepe.ok ? fundingPepe.data.provider : 'binance', fundingPepe, fundingPepe.ok ? fundingPepe.data.provider : undefined),
-    probe('funding:resolved:DOGE', fundingDoge.ok ? fundingDoge.data.provider : 'binance', fundingDoge, fundingDoge.ok ? fundingDoge.data.provider : undefined),
+    ...candleCoins.map((c) => {
+      const r = byCandle.get(c)!;
+      return probe(`okx:candles:${ASSETS[c].instId}:4H`, 'okx', r, r.ok ? r.data.confirmedCandles.at(-1) : undefined);
+    }),
+    probe(
+      `okx:tickers:${candleCoins.join('/')}`,
+      'okx',
+      tickers,
+      tickers.ok ? tickers.data : undefined,
+    ),
+    ...fundingCoins.flatMap((c) => {
+      const b = byBinance.get(c)!;
+      const o = byOkx.get(c)!;
+      return [
+        probe(`binance:funding:${ASSETS[c].fundingBinanceSymbol}`, 'binance', b, b.ok ? b.data.at(-1) : undefined),
+        probe(`okx:funding:${ASSETS[c].instId}`, 'okx', o, o.ok ? o.data.at(-1) : undefined),
+      ];
+    }),
+    ...fundingCoins.map((c) => {
+      const f = byResolved.get(c)!;
+      return probe(
+        `funding:resolved:${c}`,
+        f.ok ? f.data.provider : 'binance',
+        f,
+        f.ok ? f.data.provider : undefined,
+      );
+    }),
   ];
 
-  const okxOk = btc.ok && pepe.ok && doge.ok && tickers.ok;
-  const binanceOk = binancePepe.ok && binanceDoge.ok;
+  const okxOk = candles.every((r) => r.ok) && tickers.ok;
+  const binanceOk = binanceFundings.every((r) => r.ok);
 
   return NextResponse.json({
     ok: true,
@@ -105,7 +126,7 @@ export async function GET() {
     summary: {
       okx: okxOk ? 'ok' : 'failed',
       binance: binanceOk ? 'ok' : 'degraded',
-      funding: fundingPepe.ok || fundingDoge.ok ? 'ok' : 'failed',
+      funding: resolvedFundings.some((r) => r.ok) ? 'ok' : 'failed',
     },
     config: {
       okxHosts: MARKET_META.OKX_HOSTS,

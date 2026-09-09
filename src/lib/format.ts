@@ -38,6 +38,23 @@ export function formatPrice(v: number | null, digits = 6): string {
   return v.toExponential(4);
 }
 
+/**
+ * 价格 UI 显示层（MED-5：小币种禁科学计数法，只改 UI 显示层）。
+ * 与 formatPrice 同口径，仅把 abs<0.0001 一档展开为全小数（如 PEPE 0.00000365，
+ * 而非 3.6463e-6）。API 层原样透出不动（D1 另起，不碰）。
+ */
+export function formatPricePlain(v: number | null): string {
+  if (v == null || !Number.isFinite(v)) return '—';
+  if (v === 0) return '0';
+  const abs = Math.abs(v);
+  if (abs >= 1000) return v.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  if (abs >= 1) return v.toLocaleString('en-US', { maximumFractionDigits: 4 });
+  if (abs >= 0.01) return v.toFixed(4);
+  if (abs >= 0.0001) return v.toFixed(6);
+  const expanded = v.toFixed(20).replace(/(\.\d*?[1-9])0+$/, '$1').replace(/\.0+$/, '');
+  return expanded === '-0' ? '0' : expanded;
+}
+
 export function formatPct(v: number | null, digits = 2): string {
   if (v == null || !Number.isFinite(v)) return '—';
   const sign = v > 0 ? '+' : '';

@@ -19,7 +19,7 @@ import {
   TRIGGER_COPY,
   FOLLOW_THROUGH_COPY,
 } from '@/lib/action';
-import { formatPrice, formatPct, formatTs, formatClock, relativeTime } from '@/lib/format';
+import { formatPricePlain, formatPct, formatTs, formatClock, relativeTime } from '@/lib/format';
 import { CANDLE_4H_MS } from '@/lib/time';
 import { cn } from '@/lib/utils';
 
@@ -63,13 +63,15 @@ interface OverviewResp {
   errors?: string[];
   fundingProvider?: 'binance' | 'okx' | null;
   freshness?: FeedFreshness | null;
-  fundingTs?: Record<'PEPE' | 'DOGE', number | null> | null;
+  freshnessByCoin?: Record<'PEPE' | 'DOGE' | 'ETHFI', FeedFreshness> | null;
+  fundingTs?: Record<'PEPE' | 'DOGE' | 'ETHFI', number | null> | null;
   data: {
     pepe: AssetSignal | null;
     doge: AssetSignal | null;
-    prices: Record<'PEPE' | 'DOGE' | 'BTC', { last: number; ts: number } | null>;
-    lastConfirmedTs: { PEPE: number | null; DOGE: number | null; BTC: number | null };
-    intraday: { PEPE: Candle | null; DOGE: Candle | null; BTC: Candle | null };
+    ethfi: AssetSignal | null;
+    prices: Record<'PEPE' | 'DOGE' | 'BTC' | 'ETHFI', { last: number; ts: number } | null>;
+    lastConfirmedTs: { PEPE: number | null; DOGE: number | null; BTC: number | null; ETHFI: number | null };
+    intraday: { PEPE: Candle | null; DOGE: Candle | null; BTC: Candle | null; ETHFI: Candle | null };
     sources: Record<string, unknown>;
   };
 }
@@ -80,7 +82,7 @@ const TIMEFRAMES: { key: Timeframe; label: string }[] = [
   { key: '1D', label: '1D' },
 ];
 
-export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
+export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' | 'ETHFI' }) {
   const meta = ASSETS[coin];
   const [tf, setTf] = useState<Timeframe>('4H');
 
@@ -88,13 +90,14 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
   const fundingApi = useApi<FundingResp>(`/api/market/funding?coin=${coin}&limit=30`);
   const overviewApi = useApi<OverviewResp>('/api/market/overview');
 
-  const signal = coin === 'PEPE' ? overviewApi.data?.data.pepe : overviewApi.data?.data.doge;
+  const signal = coin === 'PEPE' ? overviewApi.data?.data.pepe : coin === 'DOGE' ? overviewApi.data?.data.doge : overviewApi.data?.data.ethfi;
   const live = overviewApi.data?.status === 'live';
   const price = overviewApi.data?.data.prices?.[coin] ?? null;
-  // P0-1 三态：优先用服务端 freshness；缺字段时按 live 回退（此前非 live 硬编码 'stale'，现按 unavailable 回退）。
-  const feedStatus = overviewApi.data?.freshness?.status ?? (overviewApi.data ? (live ? 'ok' : 'unavailable') : 'unavailable');
+  // P0-1 三态：优先用本标分标新鲜度（分标隔离），缺字段时按全局 freshness / live 回退。
+  const coinFresh = overviewApi.data?.freshnessByCoin?.[coin] ?? null;
+  const feedStatus = coinFresh?.status ?? overviewApi.data?.freshness?.status ?? (overviewApi.data ? (live ? 'ok' : 'unavailable') : 'unavailable');
   const feedReason =
-    overviewApi.data?.freshness?.reason ?? (live ? null : '实时链路非 live，信号可能不是最新');
+    coinFresh?.reason ?? overviewApi.data?.freshness?.reason ?? (live ? null : '实时链路非 live，信号可能不是最新');
   const action = signal
     ? deriveActionState(
         actionInputFromSignal(signal, {
@@ -158,7 +161,7 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
             />
             <div className="text-sm">
               <span className="text-muted-foreground">最新价 </span>
-              <span className="tnum font-mono font-medium">{formatPrice(price?.last ?? null)}</span>
+              <span className="tnum font-mono font-medium">{formatPricePlain(price?.last ?? null)}</span>
               {price?.ts ? (
                 <span className="ml-2 text-[11px] text-muted-foreground">
                   更新于 {formatTs(price.ts)}（{relativeTime(price.ts)}）
@@ -172,7 +175,7 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
             {lastConfirmedTs ? ` · 最近4H收盘 ${formatTs(lastConfirmedTs + CANDLE_4H_MS)}（区间 ${formatClock(lastConfirmedTs)}–${formatClock(lastConfirmedTs + CANDLE_4H_MS)}）` : ''}
             {intraday ? (
               <span className="ml-1 text-warn">
-                · 盘中未收盘 {formatPrice(intraday.c)}（不构成突破确认）
+                · 盘中未收盘 {formatPricePlain(intraday.c)}（不构成突破确认）
               </span>
             ) : null}
           </div>
@@ -228,20 +231,35 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
                 </div>
               )}
             </div>
-            <div className={cn('grid grid-cols-2 gap-2 sm:grid-cols-4', action.history.historicalOnly && 'opacity-50 grayscale')}>
-              <ScoreBox label="Setup 蓄势" value={signal.setup.value} status={signal.setup.status} color={meta.themecolor} tooltip={SETUP_COPY.tooltip} />
-              <ScoreBox label="Trigger 突破结构" value={signal.trigger.value} status={signal.trigger.status} color='var(--btc)' tooltip={TRIGGER_COPY.tooltip} />
-              <ScoreBox label="Follow 跟随" value={signal.followThrough.value} status={signal.followThrough.status} color='var(--radar)' tooltip={FOLLOW_THROUGH_COPY.tooltip} displayValue={action.history.followThroughText} />
-              <ScoreBox label="Entry Heat 追高/过热" value={action.entryHeat.value} status={action.entryHeat.value != null ? 'COMPUTED' : 'DATA_UNAVAILABLE'} color='var(--bear)' tooltip={ENTRY_HEAT_COPY.tooltip} displayValue={action.entryHeat.value != null ? `${action.entryHeat.value} · ${action.entryHeat.band}` : undefined} />
-            </div>
+            {/* MED-6：失效后历史评分收进折叠降权，仅复盘 */}
+            {action.history.historicalOnly ? (
+              <details className="opacity-70">
+                <summary className="cursor-pointer text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  本轮历史突破评分（仅用于复盘，点击展开）
+                </summary>
+                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <ScoreBox label="Setup 蓄势" value={signal.setup.value} status={signal.setup.status} color={meta.themecolor} tooltip={SETUP_COPY.tooltip} />
+                  <ScoreBox label="Trigger 突破结构" value={signal.trigger.value} status={signal.trigger.status} color='var(--btc)' tooltip={TRIGGER_COPY.tooltip} />
+                  <ScoreBox label="Follow 跟随" value={signal.followThrough.value} status={signal.followThrough.status} color='var(--radar)' tooltip={FOLLOW_THROUGH_COPY.tooltip} displayValue={action.history.followThroughText} />
+                  <ScoreBox label="Entry Heat 追高/过热" value={action.entryHeat.value} status={action.entryHeat.value != null ? 'COMPUTED' : 'DATA_UNAVAILABLE'} color='var(--bear)' tooltip={ENTRY_HEAT_COPY.tooltip} displayValue={action.entryHeat.value != null ? `${action.entryHeat.value} · ${action.entryHeat.band}` : undefined} />
+                </div>
+              </details>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <ScoreBox label="Setup 蓄势" value={signal.setup.value} status={signal.setup.status} color={meta.themecolor} tooltip={SETUP_COPY.tooltip} />
+                <ScoreBox label="Trigger 突破结构" value={signal.trigger.value} status={signal.trigger.status} color='var(--btc)' tooltip={TRIGGER_COPY.tooltip} />
+                <ScoreBox label="Follow 跟随" value={signal.followThrough.value} status={signal.followThrough.status} color='var(--radar)' tooltip={FOLLOW_THROUGH_COPY.tooltip} displayValue={action.history.followThroughText} />
+                <ScoreBox label="Entry Heat 追高/过热" value={action.entryHeat.value} status={action.entryHeat.value != null ? 'COMPUTED' : 'DATA_UNAVAILABLE'} color='var(--bear)' tooltip={ENTRY_HEAT_COPY.tooltip} displayValue={action.entryHeat.value != null ? `${action.entryHeat.value} · ${action.entryHeat.band}` : undefined} />
+              </div>
+            )}
             {action.history.historicalOnly && (
               <p className="text-[11px] text-muted-foreground">本轮历史突破评分，仅用于复盘。</p>
             )}
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <Level label="当前下一压力" value={formatPrice(signal.keyLevels.resistance)} />
-              <Level label="结构失效位" value={formatPrice(signal.keyLevels.invalidation)} />
-              <Level label="本轮突破位" value={formatPrice(signal.keyLevels.breakoutLevel)} />
-              <Level label="EMA20" value={formatPrice(signal.keyLevels.ema20)} />
+              <Level label="当前下一压力" value={formatPricePlain(signal.keyLevels.resistance)} />
+              <Level label="结构失效位" value={formatPricePlain(signal.keyLevels.invalidation)} />
+              <Level label="本轮突破位" value={formatPricePlain(signal.keyLevels.breakoutLevel)} />
+              <Level label="EMA20" value={formatPricePlain(signal.keyLevels.ema20)} />
             </div>
           </CardContent>
         </Card>
@@ -298,7 +316,10 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
           {candles.length ? (
             <CandleChart candles={candles} showEma />
           ) : candlesApi.loading ? (
-            <div className="py-16 text-center text-sm text-muted-foreground">加载中…</div>
+            <div aria-busy="true" aria-label="K 线加载中" className="min-h-[400px] space-y-2 py-4">
+              <div className="h-[300px] animate-pulse rounded bg-muted/60" />
+              <div className="h-4 w-2/3 animate-pulse rounded bg-muted/60" />
+            </div>
           ) : (
             <div className="space-y-3 py-8">
               <div className="text-center text-sm text-muted-foreground">
@@ -310,7 +331,7 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' }) {
           {lastConfirmedTs && (
             <p className="mt-2 text-[11px] text-muted-foreground">
               最近4H收盘：{formatTs(lastConfirmedTs + CANDLE_4H_MS)}（区间 {formatClock(lastConfirmedTs)}–{formatClock(lastConfirmedTs + CANDLE_4H_MS)}，UTC+8）
-              {intraday ? `　盘中未收盘：${formatPrice(intraday.c)}（不参与判定）` : ''}
+              {intraday ? `　盘中未收盘：${formatPricePlain(intraday.c)}（不参与判定）` : ''}
             </p>
           )}
         </CardContent>

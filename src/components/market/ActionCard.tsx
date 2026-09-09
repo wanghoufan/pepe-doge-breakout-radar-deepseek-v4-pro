@@ -1,6 +1,6 @@
 'use client';
 
-import { formatPrice, formatPct, formatTs } from '@/lib/format';
+import { formatPricePlain, formatPct, formatTs } from '@/lib/format';
 import type { ActionState } from '@/lib/action';
 import { cn } from '@/lib/utils';
 
@@ -109,7 +109,7 @@ function KeyPrice({ label, value, title }: { label: string; value: number | null
       <span className="min-w-0 text-muted-foreground" title={title}>
         {label}
       </span>
-      <span className="tnum max-w-[60%] shrink-0 break-all text-right font-mono text-foreground">{formatPrice(value)}</span>
+      <span className="tnum max-w-[60%] shrink-0 break-all text-right font-mono text-foreground">{formatPricePlain(value)}</span>
     </div>
   );
 }

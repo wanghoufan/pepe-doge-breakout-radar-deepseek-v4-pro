@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StateBadge } from './StateBadge';
 import { ActionCard } from './ActionCard';
 import { ASSETS } from '@/lib/config';
-import { formatPrice, formatPct, formatTs, formatRatio } from '@/lib/format';
+import { formatPricePlain, formatPct, formatTs, formatRatio } from '@/lib/format';
 import {
   deriveActionState,
   actionInputFromSignal,
@@ -33,6 +33,7 @@ export function SignalCard({
   priceTs,
   dataStatus,
   staleReason,
+  loading,
 }: {
   asset: AssetId;
   signal: AssetSignal | null;
@@ -41,6 +42,8 @@ export function SignalCard({
   priceTs?: number | null;
   dataStatus?: ActionInput['dataStatus'];
   staleReason?: string | null;
+  /** 首载 loading 时给骨架占位（min-h 防 CLS）；缺省按不可用处理。 */
+  loading?: boolean;
 }) {
   const meta = ASSETS[asset];
   const action = deriveActionState(
@@ -65,7 +68,7 @@ export function SignalCard({
           {signal && (
             <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
               <span className="text-xs text-muted-foreground">OKX 实时价</span>
-              <span className="tnum font-mono text-sm">{formatPrice(price ?? null)}</span>
+              <span className="tnum font-mono text-sm">{formatPricePlain(price ?? null)}</span>
               {priceTs ? (
                 <span className="text-[11px] text-muted-foreground">更新于 {formatTs(priceTs)}</span>
               ) : null}
@@ -83,7 +86,16 @@ export function SignalCard({
       <CardContent className="space-y-4">
         {/* Level 1–3：当前行动（永远排在最前） */}
         <ActionCard action={action} />
-        {!signal && (
+        {!signal && loading && (
+          <div aria-busy="true" className="min-h-[220px] space-y-2 py-6" aria-label="信号加载中">
+            <div className="h-5 w-2/3 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-full animate-pulse rounded bg-muted/70" />
+            <div className="h-4 w-5/6 animate-pulse rounded bg-muted/70" />
+            <div className="h-4 w-4/6 animate-pulse rounded bg-muted/70" />
+            <p className="pt-1 text-center text-xs text-muted-foreground">实时信号加载中…</p>
+          </div>
+        )}
+        {!signal && !loading && (
           <div className="py-6 text-center text-sm text-muted-foreground">实时信号不可用</div>
         )}
         {signal && (
@@ -100,22 +112,40 @@ export function SignalCard({
               <GateBadge gate={signal.environment.gate} />
             </div>
 
-            {/* 分层评分（Level 5；失效后历史评分灰化，仅复盘） */}
-            <div className={cn('space-y-1.5', historicalOnly && 'opacity-50 grayscale')}>
-              <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                {historicalOnly ? '本轮历史突破评分（仅用于复盘）' : '分层评分'}
+            {/* 分层评分（Level 5；失效后历史评分灰化收进折叠，仅复盘，MED-6 降权） */}
+            {historicalOnly ? (
+              <details className="space-y-1.5 opacity-70">
+                <summary className="cursor-pointer text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  本轮历史突破评分（仅用于复盘，点击展开）
+                </summary>
+                <ScoreLine label="Setup · 蓄势" score={signal.setup} color={meta.themecolor} tooltip={SETUP_COPY.tooltip} />
+                <ScoreLine label="Trigger · 突破结构完整度" score={signal.trigger} color='var(--btc)' tooltip={TRIGGER_COPY.tooltip} />
+                <ScoreLine
+                  label="Follow-through · 跟随"
+                  score={signal.followThrough}
+                  color='var(--radar)'
+                  tooltip={FOLLOW_THROUGH_COPY.tooltip}
+                  gradeText={action.history.followThroughText}
+                />
+                <EntryHeatLine value={action.entryHeat.value} band={action.entryHeat.band} />
+              </details>
+            ) : (
+              <div className="space-y-1.5">
+                <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  分层评分
+                </div>
+                <ScoreLine label="Setup · 蓄势" score={signal.setup} color={meta.themecolor} tooltip={SETUP_COPY.tooltip} />
+                <ScoreLine label="Trigger · 突破结构完整度" score={signal.trigger} color='var(--btc)' tooltip={TRIGGER_COPY.tooltip} />
+                <ScoreLine
+                  label="Follow-through · 跟随"
+                  score={signal.followThrough}
+                  color='var(--radar)'
+                  tooltip={FOLLOW_THROUGH_COPY.tooltip}
+                  gradeText={action.history.followThroughText}
+                />
+                <EntryHeatLine value={action.entryHeat.value} band={action.entryHeat.band} />
               </div>
-              <ScoreLine label="Setup · 蓄势" score={signal.setup} color={meta.themecolor} tooltip={SETUP_COPY.tooltip} />
-              <ScoreLine label="Trigger · 突破结构完整度" score={signal.trigger} color='var(--btc)' tooltip={TRIGGER_COPY.tooltip} />
-              <ScoreLine
-                label="Follow-through · 跟随"
-                score={signal.followThrough}
-                color='var(--radar)'
-                tooltip={FOLLOW_THROUGH_COPY.tooltip}
-                gradeText={action.history.followThroughText}
-              />
-              <EntryHeatLine value={action.entryHeat.value} band={action.entryHeat.band} />
-            </div>
+            )}
 
             {/* 突破信息（EPISODE HISTORY：本轮突破当时，手机端单列防溢出） */}
             {signal.breakout.confirmed && (
@@ -264,7 +294,7 @@ function LevelRow({ label, value, custom }: { label: string; value: number | nul
   return (
     <div className="flex min-w-0 items-center justify-between gap-2 rounded-md bg-muted/50 px-2.5 py-1.5">
       <span className="min-w-0 text-muted-foreground">{label}</span>
-      <span className="tnum max-w-[60%] shrink-0 break-all text-right font-mono text-foreground">{custom ?? formatPrice(value)}</span>
+      <span className="tnum max-w-[60%] shrink-0 break-all text-right font-mono text-foreground">{custom ?? formatPricePlain(value)}</span>
     </div>
   );
 }

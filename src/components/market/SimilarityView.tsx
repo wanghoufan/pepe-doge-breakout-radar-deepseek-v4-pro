@@ -120,7 +120,7 @@ export function SimilarityView() {
                 return (
                   <div key={n.eventId} className="rounded-md border border-border px-3 py-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-sm" style={{ color: e ? ASSETS[e.coin as 'PEPE' | 'DOGE'].themecolor : undefined }}>
+                      <span className="font-mono text-sm" style={{ color: e ? ASSETS[e.coin as 'PEPE' | 'DOGE' | 'ETHFI'].themecolor : undefined }}>
                         {n.eventId}
                       </span>
                       <span className="tnum font-mono text-xs text-radar">{(n.score * 100).toFixed(0)}%</span>
@@ -149,7 +149,7 @@ function CurrentPanel({
   resp: ApiState<CurrentResp>;
   byId: Map<string, SimEventSummary>;
 }) {
-  const meta = ASSETS[coin as 'PEPE' | 'DOGE'];
+  const meta = ASSETS[coin as 'PEPE' | 'DOGE' | 'ETHFI'];
   const top = resp.data?.data?.ranking.slice(0, 5) ?? [];
   return (
     <Card>
@@ -210,7 +210,7 @@ function ScatterPlot({
       <rect x="0" y="0" width={W} height={H} fill="transparent" />
       {points.map((p) => {
         const e = byId.get(p.id);
-        const color = e ? ASSETS[e.coin as 'PEPE' | 'DOGE'].themecolor : '#888';
+        const color = e ? ASSETS[e.coin as 'PEPE' | 'DOGE' | 'ETHFI'].themecolor : '#888';
         const isSel = p.id === selected;
         return (
           <g key={p.id} onClick={() => onSelect(p.id)} className="cursor-pointer">
