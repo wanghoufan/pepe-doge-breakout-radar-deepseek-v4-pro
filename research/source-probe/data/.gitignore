@@ -1,3 +1,4 @@
 probe-*.jsonl
 summary-*.json
+summary-*.txt
 runner-*.log

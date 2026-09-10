@@ -4,9 +4,11 @@
  * - 新增数据只进 server-side research store，实时 Action **禁止消费**本协议任何
  *   新字段：`market-service.ts` / `v2/engine.ts` / `action.ts` 禁 import 本目录
  *   任何模块（`research/schema|venue-adapters|field-freshness|ingest|store|
- *   instrument-registry`），禁引用新字段名（`oi_notional_usd` / `cvd_proxy` /
+ *   collector|instrument-registry`），禁引用新字段名（`oi_notional_usd` / `cvd_proxy` /
  *   `mark_index_basis_pct` / `funding_cross_diff_pp` / `instrument_registry_key` 等）。
  * - 本模块提供纯文本断言（供单测消费源文件文本做门控），自身亦不被实时链路 import。
+ * - 前向采集器（research/collector）同样只进 server-side research store，
+ *   实时链路禁 import（下表已含 `research/collector`）。
  * - 纯函数，无网络、无评分（Quant NONE）。
  */
 
@@ -23,6 +25,7 @@ export const FORBIDDEN_MODULE_FRAGMENTS = [
   'research/field-freshness',
   'research/ingest',
   'research/store',
+  'research/collector',
   'research/instrument-registry',
 ] as const;
 
