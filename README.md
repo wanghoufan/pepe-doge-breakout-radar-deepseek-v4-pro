@@ -1,5 +1,9 @@
 # PEPE/DOGE/ETHFI 突破雷达
 
+![首页·实时雷达（生产真机截图）](docs/qa/ethfi-acceptance/01-home.png)
+
+生产地址：https://pepe-doge-breakout-radar.vercel.app（main 分支自动部署）
+
 基于历史量化研究的行情观测型 Web 应用（V2）。它把研究包里的量化特征，转成一套**严格时点对齐、无未来数据污染、可实时、可回测、可区分成功/失败突破**的观测雷达：持续追踪 PEPE 与 DOGE 的蓄势、临界、突破、跟随与失效状态，用六层独立评分（环境闸门 / Setup / Trigger / Follow-through / Risk / Hard Veto）+ 十态状态机代替模糊判断。
 
 > 本项目**不构成任何投资建议**，**不输出面向交易决策的胜率、准确率、假突破概率或收益承诺**。回测指标仅作研究诚实性证据。
@@ -67,6 +71,16 @@ scripts/recompute-v2.ts  离线重算 21 事件 + 全量扫描 + walk-forward �
 - 样本量有限：仅两个标的、约 883 天 4H 数据、冻结基线 290 raw / 116 episodes（41 成功 / 75 失败）/ 768 normal（760 可评），walk-forward 各 fold 样本稀疏，Precision/Recall 波动大。旧「217 个突破」为旧 raw-cooldown 口径、已作废。
 - MFE/MAE 标签阈值（MFE≥10% / MAE≥-8%）为单组取值，尚未做参数敏感性分析。
 - 沙箱/部分部署环境无法访问 OKX / Binance 外网时，实时雷达显示「实时数据不可用」，历史维度仍完整可用。
+
+## 本次推送变动（2026-09-10 ~ 09-11，非首次推送）
+
+> 基于 `origin/main`（`39a63f3` ETHFI 三标接入）之后的 2 个提交 + 本次 README 更新。
+
+- `73d6a18` feat(research)：P0 数据源探针 + 采集基建 + derive 补齐（24h 基线待转正；实时链路零消费、仅离线研究）。
+  新增 `research/source-probe/`（OKX/Binance 探针 + 24h 基线脚本）、`src/lib/research/`（schema/store/ingest/venue-adapters/field-freshness/instrument-registry/isolation）+ 单测 `research-infra` / `research-schema`；新增 `ETHFI_PRODUCTION_CLOSEOUT.md`、`PRE_ALERT_DATA_PROTOCOL_V1.md`（样本冻结口径：Raw 290 / Episode 116〈41 成功/75 失败〉/ Normal 768〈760 可评〉，旧 217 口径作废）；附生产只读复验证据 `docs/qa/ethfi-production/`。
+- `ecced00` feat(research)：前向采集器 + 基线澄清（QA PASS；实时零消费）。
+  新增 `src/lib/research/collector.ts` + `research/forward-collect/` + `research/ELIGIBLE_COVERAGE_V1.md`，`SOURCE_CADENCE_BASELINE_V1.md` 转正基线。
+- 本次：README 顶部补首页产品截图（`docs/qa/ethfi-acceptance/01-home.png` 生产真机实拍）+ 生产地址；标题与样本口径已对齐 ETHFI 三标与冻结基线。
 
 ## 免责声明
 
