@@ -13,5 +13,6 @@ export default {
     'lightness-notation': null,
     'rule-empty-line-before': null,
     'value-keyword-case': null,
+    'at-rule-prelude-no-invalid': null,
   },
 };

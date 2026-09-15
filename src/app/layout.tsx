@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inspector } from 'react-dev-inspector';
+import { ThemeProvider } from 'next-themes';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { AlertCenterHost } from '@/components/market/AlertCenter';
@@ -23,13 +24,15 @@ export default function RootLayout({
   const isDev = process.env.COZE_PROJECT_ENV === 'DEV';
 
   return (
-    <html lang="zh-CN" className="dark">
+    <html lang="zh-CN" suppressHydrationWarning>
       <body className="antialiased min-h-screen bg-background text-foreground">
-        {isDev && <Inspector />}
-        <SiteHeader />
-        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6" id="radar-live">{children}</main>
-        <SiteFooter />
-        <AlertCenterHost />
+        <ThemeProvider attribute="class" defaultTheme="system" disableTransitionOnChange>
+          {isDev && <Inspector />}
+          <SiteHeader />
+          <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6" id="radar-live">{children}</main>
+          <SiteFooter />
+          <AlertCenterHost />
+        </ThemeProvider>
       </body>
     </html>
   );

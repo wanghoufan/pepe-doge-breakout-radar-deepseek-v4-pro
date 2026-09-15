@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
+import { Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV = [
@@ -18,10 +20,20 @@ const NAV = [
 export function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname === href || pathname.startsWith(href + '/');
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   return (
@@ -52,6 +64,19 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
+
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="rounded-md border border-border p-2 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          aria-label="切换主题"
+        >
+          {mounted && (theme === 'dark' ? (
+            <Sun width={18} height={18} />
+          ) : (
+            <Moon width={18} height={18} />
+          ))}
+        </button>
 
         <button
           type="button"
