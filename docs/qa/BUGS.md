@@ -80,3 +80,17 @@
 - Vercel 声明：WatchBoard＋页脚「Vercel 生产环境不保证跨部署保存」在位
 - 截图：/var/folders/mp/mnxk3h8x4wq5ztr7__vlplp40000gn/T/opencode/qabrowser/qa-home.png、qa-ethfi.png（工作区外，不进仓）
 - 结论：PASS，新 BUG 0
+
+## QA-2026-09-18-第二轮｜market-service 动态化＋备份脚本回归（P1 两项）
+
+- 基线：DEV_BASELINE=PRODUCT_PLAN_V0.2；CODE_REVIEW 第二轮 PASS（2026-09-18，P1-blocking 0）
+- 单元/类型：`pnpm test` 214/214 通过；`pnpm ts-check` exit 0
+- 接口（dev PORT=5123，`SQLITE_DB_PATH=/tmp/qa-5123-recheck.db`，已杀进程、已删临时库，`var/` 无残留）：
+  - `GET /` → 200
+  - `GET /api/config` → ok:true，默认 tier:4（slots 全空、persisted:false）
+  - `GET /api/assets` → 200：enabled=[PEPE,DOGE,ETHFI]，reference=[BTC]，candidates status=unavailable（沙箱无外网，预期）
+  - `GET /api/market/overview` → 200：`data.signals` 含 PEPE/DOGE/ETHFI；legacy 小写字段 `data.pepe/doge/ethfi` 在（沙箱无网为 null，预期）；`data.prices` 含 BTC/DOGE/ETHFI/PEPE；status=unavailable（OKX DNS 墙，预期，不判缺陷）
+- 备份脚本：`bash scripts/backup-sqlite.sh --help` 正常输出用法（backup/verify 两命令＋环境变量说明）
+- 无胜率表述：`rg 胜率 src/` 命中均为合规禁令声明（BANNED_COPY_WORDS／页脚“不输出胜率…”／测试断言），无面向交易决策的概率化收益表述 → 通过
+- 真机预检：本轮为 API＋SSR＋纯函数验证，无真机 session，记 NOT_VERIFIED
+- 结论：PASS，新 BUG 0（沿用既有 BUG-001/002/003＋INFO，不新增）

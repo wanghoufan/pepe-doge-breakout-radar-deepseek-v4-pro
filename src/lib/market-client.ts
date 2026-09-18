@@ -240,9 +240,11 @@ export interface OkxCandles {
   fetchedAt: number;
 }
 
-/** 拉取 OKX 永续合约 K 线（升序）。confirmed 字段来自 OKX 返回的 confirm 位。 */
-export async function getOkxCandles(coin: Coin, bar: string, limit = 200): Promise<Result<OkxCandles>> {
-  const instId = OKX_INST[coin];
+/**
+ * 按 instId 拉取 OKX 永续合约 K 线（升序）。confirmed 字段来自 OKX 返回的 confirm 位。
+ * 动态注册表入口：instId 由注册表提供，不再局限于内置四币（限频/缓存/诊断语义同）。
+ */
+export async function getOkxCandlesByInst(instId: string, bar: string, limit = 200): Promise<Result<OkxCandles>> {
   const path = `/api/v5/market/candles?instId=${instId}&bar=${bar}&limit=${limit}`;
   const res = await fetchWithFallback(path, OKX_HOSTS, OKX_TIMEOUT_MS, `candles:${instId}:${bar}:${limit}`);
   if (!res.ok) return res;
@@ -292,19 +294,25 @@ export async function getOkxCandles(coin: Coin, bar: string, limit = 200): Promi
   return { ok: true, data, diag: res.diag };
 }
 
-export type OkxTickers = Partial<Record<Coin, { last: number; ts: number }>>;
+/** 内置四币 K 线入口（保留兼容；instId 唯一来源 config.ASSETS）。 */
+export async function getOkxCandles(coin: Coin, bar: string, limit = 200): Promise<Result<OkxCandles>> {
+  return getOkxCandlesByInst(OKX_INST[coin], bar, limit);
+}
 
-/** 拉取 OKX 永续最新价（用于实时价格与涨跌）。 */
-export async function getOkxTickers(coins: Coin[]): Promise<Result<OkxTickers>> {
+export type OkxTickers = Partial<Record<Coin, { last: number; ts: number }>>;
+/** 按 instId 键控的最新价映射（动态注册表口径）。 */
+export type OkxTickersByInst = Record<string, { last: number; ts: number }>;
+
+/** 按 instId 拉取 OKX 永续最新价（去重由调用方保证；限频/缓存/诊断语义同）。 */
+export async function getOkxTickersByInst(instIds: string[]): Promise<Result<OkxTickersByInst>> {
   const started = Date.now();
-  const out: OkxTickers = {};
+  const out: OkxTickersByInst = {};
   const attempts: FetchDiag['attempts'] = [];
   let lastDiag: FetchDiag | null = null;
   let failed = 0;
 
   await Promise.all(
-    coins.map(async (coin) => {
-      const instId = OKX_INST[coin];
+    instIds.map(async (instId) => {
       const path = `/api/v5/market/ticker?instId=${instId}`;
       const res = await fetchWithFallback(path, OKX_HOSTS, OKX_TIMEOUT_MS, `ticker:${instId}`);
       lastDiag = res.diag;
@@ -325,7 +333,7 @@ export async function getOkxTickers(coins: Coin[]): Promise<Result<OkxTickers>> 
         });
         return;
       }
-      out[coin] = { last: Number(body.data[0].last), ts: Number(body.data[0].ts) };
+      out[instId] = { last: Number(body.data[0].last), ts: Number(body.data[0].ts) };
     }),
   );
 
@@ -342,7 +350,7 @@ export async function getOkxTickers(coins: Coin[]): Promise<Result<OkxTickers>> 
     attempts,
   };
 
-  if (failed === coins.length) {
+  if (failed === instIds.length) {
     return {
       ok: false,
       error: 'okx_ticker_failed',
@@ -356,11 +364,23 @@ export async function getOkxTickers(coins: Coin[]): Promise<Result<OkxTickers>> 
     diag: {
       ...base,
       errorKind: failed > 0 ? 'http_status' : 'none',
-      errorDetail: failed > 0 ? `${failed}/${coins.length} 个标的 ticker 失败` : null,
+      errorDetail: failed > 0 ? `${failed}/${instIds.length} 个标的 ticker 失败` : null,
       attempts,
       durationMs: Date.now() - started,
     },
   };
+}
+
+/** 内置四币最新价入口（保留兼容）：instId → 币种键回映射，语义与诊断不变。 */
+export async function getOkxTickers(coins: Coin[]): Promise<Result<OkxTickers>> {
+  const res = await getOkxTickersByInst(coins.map((c) => OKX_INST[c]));
+  if (!res.ok) return res;
+  const out: OkxTickers = {};
+  for (const c of coins) {
+    const t = res.data[OKX_INST[c]];
+    if (t) out[c] = t;
+  }
+  return { ok: true, data: out, diag: res.diag };
 }
 
 export interface FundingPoint {
@@ -375,9 +395,8 @@ export interface FundingResult {
   provider: 'binance' | 'okx';
 }
 
-/** 拉取 Binance 永续资金费率（升序）。 */
-export async function getBinanceFunding(coin: FundingCoin, limit = 30): Promise<Result<FundingPoint[]>> {
-  const symbol = BINANCE_SYMBOL[coin];
+/** 拉取 Binance 永续资金费率（升序，按 symbol）。 */
+export async function getBinanceFundingBySymbol(symbol: string, limit = 30): Promise<Result<FundingPoint[]>> {
   const path = `/fapi/v1/fundingRate?symbol=${symbol}&limit=${limit}`;
   const res = await fetchWithFallback(path, BINANCE_HOSTS, BINANCE_TIMEOUT_MS, `funding:binance:${symbol}:${limit}`);
   if (!res.ok) return res;
@@ -404,9 +423,13 @@ export async function getBinanceFunding(coin: FundingCoin, limit = 30): Promise<
   return { ok: true, data: rows, diag: res.diag };
 }
 
-/** 拉取 OKX 永续资金费率（升序，用于 Binance 不可用时的实时兜底）。 */
-export async function getOkxFunding(coin: FundingCoin, limit = 30): Promise<Result<FundingPoint[]>> {
-  const instId = OKX_INST[coin];
+/** 内置四币 Binance 资金费率入口（保留兼容；symbol 唯一来源 config.ASSETS）。 */
+export async function getBinanceFunding(coin: FundingCoin, limit = 30): Promise<Result<FundingPoint[]>> {
+  return getBinanceFundingBySymbol(BINANCE_SYMBOL[coin], limit);
+}
+
+/** 拉取 OKX 永续资金费率（升序，按 instId，用于 Binance 不可用时的实时兜底）。 */
+export async function getOkxFundingByInst(instId: string, limit = 30): Promise<Result<FundingPoint[]>> {
   const path = `/api/v5/public/funding-rate?instId=${instId}&limit=${limit}`;
   const res = await fetchWithFallback(path, OKX_HOSTS, OKX_TIMEOUT_MS, `funding:okx:${instId}:${limit}`);
   if (!res.ok) return res;
@@ -435,49 +458,89 @@ export async function getOkxFunding(coin: FundingCoin, limit = 30): Promise<Resu
   return { ok: true, data: rows, diag: res.diag };
 }
 
+/** 内置四币 OKX 资金费率入口（保留兼容）。 */
+export async function getOkxFunding(coin: FundingCoin, limit = 30): Promise<Result<FundingPoint[]>> {
+  return getOkxFundingByInst(OKX_INST[coin], limit);
+}
+
+/** 无 Binance 链路时用于组合诊断的占位（不发起请求，诚实标注跳过原因）。 */
+function skippedBinanceDiag(detail: string): FetchDiag {
+  return {
+    url: '',
+    host: '',
+    httpStatus: null,
+    vendorCode: null,
+    vendorMsg: null,
+    errorKind: 'none',
+    errorDetail: detail,
+    cached: false,
+    durationMs: 0,
+    attempts: [],
+  };
+}
+
 /**
  * 资金费率：Binance 优先，失败则自动切到 OKX（同为交易所实时公开数据，不掺快照）。
  * 两者都失败时返回 ok:false，并保留两条链路的完整诊断。
+ * binanceSymbol 为 null（注册表未提供）时跳过 Binance，只走 OKX。
  */
-export async function getFunding(coin: FundingCoin, limit = 30): Promise<Result<FundingResult>> {
-  const binance = await getBinanceFunding(coin, limit);
-  if (binance.ok && binance.data.length) {
-    return {
-      ok: true,
-      data: { symbol: BINANCE_SYMBOL[coin], points: binance.data, provider: 'binance' },
-      diag: binance.diag,
-    };
+export async function getFundingByInst(
+  instId: string,
+  binanceSymbol: string | null,
+  limit = 30,
+): Promise<Result<FundingResult>> {
+  let binance: Result<FundingPoint[]> | null = null;
+  let binanceError: string;
+  let binanceDetail: string;
+  if (binanceSymbol) {
+    binance = await getBinanceFundingBySymbol(binanceSymbol, limit);
+    if (binance.ok && binance.data.length) {
+      return {
+        ok: true,
+        data: { symbol: binanceSymbol, points: binance.data, provider: 'binance' },
+        diag: binance.diag,
+      };
+    }
+    binanceError = binance.ok ? '返回空数据' : binance.error;
+    binanceDetail = binance.ok ? 'Binance 返回 0 条' : (binance.diag.errorDetail ?? binance.error);
+  } else {
+    binanceError = '未配置 Binance 资金费率 symbol';
+    binanceDetail = '注册表未提供该标的的 Binance 永续 symbol，已跳过 Binance';
   }
-  const binanceError = binance.ok ? '返回空数据' : binance.error;
-  const binanceDetail = binance.ok ? 'Binance 返回 0 条' : (binance.diag.errorDetail ?? binance.error);
 
-  const okx = await getOkxFunding(coin, limit);
+  const okx = await getOkxFundingByInst(instId, limit);
   if (okx.ok && okx.data.length) {
     return {
       ok: true,
-      data: { symbol: OKX_INST[coin], points: okx.data, provider: 'okx' },
+      data: { symbol: instId, points: okx.data, provider: 'okx' },
       diag: okx.diag,
     };
   }
   const okxError = okx.ok ? '返回空数据' : okx.error;
   const okxDetail = okx.ok ? 'OKX 返回 0 条' : (okx.diag.errorDetail ?? okx.error);
 
+  const binanceDiag = binance?.diag ?? skippedBinanceDiag(binanceDetail);
   return {
     ok: false,
     error: 'funding_unavailable',
     diag: {
-      url: `${binance.diag.url} || ${okx.diag.url}`,
-      host: `${binance.diag.host} || ${okx.diag.host}`,
-      httpStatus: binance.diag.httpStatus ?? okx.diag.httpStatus,
+      url: `${binanceDiag.url} || ${okx.diag.url}`,
+      host: `${binanceDiag.host} || ${okx.diag.host}`,
+      httpStatus: binanceDiag.httpStatus ?? okx.diag.httpStatus,
       vendorCode: okx.diag.vendorCode ?? null,
       vendorMsg: okx.diag.vendorMsg ?? null,
-      errorKind: okx.diag.errorKind === 'none' ? binance.diag.errorKind : okx.diag.errorKind,
+      errorKind: okx.diag.errorKind === 'none' ? binanceDiag.errorKind : okx.diag.errorKind,
       errorDetail: `Binance: ${binanceError}（${binanceDetail}） || OKX: ${okxError}（${okxDetail}）`,
       cached: false,
-      durationMs: binance.diag.durationMs + okx.diag.durationMs,
-      attempts: [...binance.diag.attempts, ...okx.diag.attempts],
+      durationMs: binanceDiag.durationMs + okx.diag.durationMs,
+      attempts: [...binanceDiag.attempts, ...okx.diag.attempts],
     },
   };
+}
+
+/** 内置四币资金费率入口（保留兼容；Binance→OKX 兜底语义不变）。 */
+export async function getFunding(coin: FundingCoin, limit = 30): Promise<Result<FundingResult>> {
+  return getFundingByInst(OKX_INST[coin], BINANCE_SYMBOL[coin], limit);
 }
 
 export interface OkxSwapInstrument {

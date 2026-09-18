@@ -32,3 +32,29 @@
 - 测试：`pnpm test` 212/212 通过（含新增 registry 5＋layout 7＋config-repository SQLite 11 项，覆盖状态门／4-6-9／一币一卡／补位／收藏搜索逻辑／Migration 幂等／损坏恢复／重启持久化语义）；`npx tsc --noEmit` 通过（exit 0）。
 
 ## 终核（第二次返工，2026-09-18）：PASS —— WatchBoard.tsx:236-238 与 DataStatus.tsx:144-146 均已为 Record<string,…>，slice(0,3) 已移除改按 config.slots 全量渲染；pnpm test 212/212＋tsc exit 0 全绿。
+
+## 第二轮复审（market-service 动态注册表拉取＋备份脚本，2026-09-18）
+
+- Task: CHANGE C 范围内 market-service 动态化＋SQLite 备份补齐（DEV_BASELINE=PRODUCT_PLAN_V0.2）
+- Commit: 工作区未提交改动（market-service.ts / market-client.ts / registry.ts / overview route / market-service-isolation.test.ts DYNAMIC-1/2 / scripts/backup-sqlite.sh / docs/qa/SQLITE_BACKUP_RESTORE.md）
+- Reviewer: code-reviewer（本窗口，只审不改）
+- Result: PASS（P1-blocking 0；P1-非 blocking 1；P2 2；以下均为后续任务指引，不拦本轮）
+
+## P0 / P1 Findings
+
+- P1-非 blocking（不拦本轮，记后续）：candle 明细路径仍为固定四键。buildMarketOverview 内 deriveCandleOverviewFreshness 调用只传 PEPE/DOGE/BTC/ETHFI 四键，overview route 的 perCoin 映射（34-53 行）同样只列四键；第 4 个 enabled 标的可经 signals/prices/freshnessByCoin/fundingTs 正常出信号与卡片，但其 candleLag/期望收盘明细不在 API 暴露。改法：后续任务把 candle 明细改为按 assets 动态键控（或明确声明 candle 明细仅覆盖核心四键、第 N 标的走 freshnessByCoin 口径）；本轮三币行为无损，不拦。
+- 无 P0；无 P1-blocking。
+
+## P2 / P3 Backlog Findings
+
+- P2：overview route 仍以默认参数调用 getMarketOverview()（即 seed 注册表），未接入 SQLite 用户配置的 enabled 集合。getMarketOverview(registry) 已支持注入、buildMarketOverview 已动态键控（DYNAMIC-1/2 覆盖），所以本轮"拉取集合注册表派生＋去重"目标达成；端到端"用户在观察盘启用的第 4 币自动进入拉取集合"需后续任务决定 route 是否读服务端配置（stateless route 读 SQLite 的取舍由 TM 定）。当前 seed 恰为三币，行为自洽。
+- P2：analyzeAssetV2 对动态标的以 `a.id as AssetId` 传入（测试内合成 WIF 同理）。运行时与 ETHFI 既有口径一致（同阈值同权重），类型上绕过了 AssetId 联合约束；后续若 AssetId 扩展或引擎收紧签名，记得同步放宽类型而非新增 cast。
+- P3：backup-sqlite.sh 与 SQLITE_BACKUP_RESTORE.md 注释/示例中出现 `/Users/zzymima0000/DockerBackups/...` 与 `/app/data/db/...` 示例路径。均为注释与文档示例、可执行逻辑全走环境变量（SQLITE_DB_PATH / SQLITE_BACKUP_DIR 默认 repo 相对路径），不算硬编码；后续复用文档时注意示例路径随部署环境替换即可。
+
+## 红线核查（全部通过）
+
+- 量化红线：indicators.ts / config.ts（阈值权重）/ state-machine.ts / v2/engine.ts 本轮 diff 为空，零改动；registry 新增 fundingBinanceSymbol 仅转述 config.ASSETS 单一来源，未复制阈值逻辑。通过。
+- PEPE/DOGE/ETHFI 行为不变：legacy 字段保留（service 内 pepe/doge/ethfi 取自 signals 同源；route 继续透出）；全局门控仍只看 BTC+PEPE+DOGE（CORE_IDS），其余标的不拖垮全局；peer 口径 PEPE↔DOGE 互为 peer 不变，其余标的取两者均值（与 ETHFI 既有口径一致）。ISOL-A1~A5/C1 全部仍过，确认无回归。通过。
+- 备份合规：可执行逻辑无硬编码宿主机绝对路径（环境变量优先，默认 repo 相对路径）；备份用 `.backup` 在线快照、拒绝直接 cp；verify 先 cp 到 mktemp 隔离目录再只读检查（integrity_check / foreign_key_check / schema version / watch_layout 业务读取）；恢复替换不在脚本内自动执行，文档明确"用户批准后才允许替换生产"＋三条禁止（未验证覆盖/开发库覆盖生产/删全部历史备份）。通过。
+- 无胜率表述：本轮 diff grep（胜率/准确率/win rate/precision/recall）仅命中测试内 fundingOk 样例 symbol 与既有注释，无面向交易决策的概率化收益表述；研究指标未进入信号/报警。通过。
+- 测试：`pnpm test` 214/214 通过（212 基线＋新增 DYNAMIC-1/2 两项：WIF 合成第 4 标的出信号＋映射；WIF 故障只降级自身）；isolation 单文件 9/9；DYNAMIC 断言覆盖 signals/prices/freshnessByCoin/fundingTs/errors 四类，真覆盖非摆设。

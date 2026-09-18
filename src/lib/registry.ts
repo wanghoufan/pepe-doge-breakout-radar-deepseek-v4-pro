@@ -28,6 +28,8 @@ export interface RegistryAsset {
   symbol: string;
   role: AssetRole;
   status: AssetStatus;
+  /** Binance 永续资金费率 symbol（来自 config.ASSETS；候选/未知为 null，资金费率只走 OKX）。 */
+  fundingBinanceSymbol: string | null;
   hasHistoryBaseline: boolean;
   sortOrder: number;
   themecolor: string;
@@ -64,6 +66,7 @@ function seedAsset(id: string, role: AssetRole, status: AssetStatus): RegistryAs
     symbol: meta.symbol,
     role,
     status,
+    fundingBinanceSymbol: meta.fundingBinanceSymbol ? meta.fundingBinanceSymbol : null,
     hasHistoryBaseline: meta.hasHistoryBaseline,
     sortOrder: meta.sortOrder,
     themecolor: meta.themecolor,
@@ -108,6 +111,11 @@ export function getEnabledAssets(registry: RegistryAsset[] = getSeedRegistry()):
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
+/** 环境参照标的（role=reference，如 BTC），不进入信号池；按 sortOrder 稳定排序。 */
+export function getReferenceAssets(registry: RegistryAsset[] = getSeedRegistry()): RegistryAsset[] {
+  return registry.filter((a) => a.role === 'reference').sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
 /** 候选池（candidate，仅登记，不可选）。 */
 export function getCandidateAssets(registry: RegistryAsset[] = getSeedRegistry()): RegistryAsset[] {
   return registry.filter((a) => a.status === 'candidate');
@@ -145,6 +153,7 @@ export function registerCandidates(
       symbol,
       role: 'signal',
       status: 'candidate',
+      fundingBinanceSymbol: null,
       hasHistoryBaseline: false,
       sortOrder: 10_000 + next.length,
       themecolor: '#94A3B8',
