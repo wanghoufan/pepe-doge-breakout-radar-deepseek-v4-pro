@@ -435,7 +435,7 @@ export async function getOkxFundingByInst(instId: string, limit = 30): Promise<R
   if (!res.ok) return res;
 
   const body = res.data as
-    | { code?: string; msg?: string; data?: { fundingTime: string; realizedRate: string }[] }
+    | { code?: string; msg?: string; data?: { fundingTime: string; realizedRate?: string; fundingRate?: string }[] }
     | null;
   if (!body || body.code !== '0' || !Array.isArray(body.data)) {
     return {
@@ -450,8 +450,9 @@ export async function getOkxFundingByInst(instId: string, limit = 30): Promise<R
       },
     };
   }
+  // OKX 现行 funding-rate 接口用 fundingRate；历史接口用 realizedRate。两者兼容解析。
   const rows = body.data
-    .map((r) => ({ ts: Number(r.fundingTime), rate: Number(r.realizedRate) }))
+    .map((r) => ({ ts: Number(r.fundingTime), rate: Number(r.fundingRate ?? r.realizedRate) }))
     .filter((r) => Number.isFinite(r.ts) && Number.isFinite(r.rate))
     .sort((a, b) => a.ts - b.ts)
     .slice(-limit);
