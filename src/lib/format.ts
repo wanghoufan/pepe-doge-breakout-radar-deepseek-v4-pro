@@ -72,6 +72,20 @@ export function formatCompact(v: number | null): string {
   return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 2 }).format(v);
 }
 
+/**
+ * D1：关键价位浮点归一（展示+API共用，epsilon级修正，非策略改动）。
+ * rollingHigh * 0.94 类乘法会产生 0.08957259999999999 伪影；归一到 10 位有效数字，
+ * epsilon ~1e-12 相对误差，远小于任何价格判定阈值，不改变任何比较结果。
+ */
+export function roundPriceLevel(v: number | null): number | null {
+  if (v == null || !Number.isFinite(v)) return v;
+  if (v === 0) return 0;
+  const precision = 10;
+  const s = v.toPrecision(precision);
+  const n = Number(s);
+  return Number.isFinite(n) ? n : v;
+}
+
 /** 相对时间（新鲜度展示）。 */
 export function relativeTime(ts: number | null): string {
   if (ts == null) return '未知';

@@ -16,7 +16,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const coin = (searchParams.get('coin') ?? 'PEPE').toUpperCase() as AssetId;
   if (!VALID_COINS.includes(coin)) {
-    return NextResponse.json({ ok: false, error: 'coin 必须为 PEPE 或 DOGE' }, { status: 400 });
+    return NextResponse.json({ ok: false, error: 'coin 必须为 PEPE 或 DOGE（ETHFI 暂无历史基线，相似性未知/缺失）' }, { status: 400 });
   }
 
   const overview = await getMarketOverview();

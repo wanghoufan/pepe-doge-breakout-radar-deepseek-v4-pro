@@ -42,6 +42,11 @@ export default async function AssetPage({ params }: { params: Promise<{ coin: st
 
       <section>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">该币种历史典型形态（{events.length}）</h2>
+        {events.length === 0 && (
+          <p className="rounded-md border border-dashed px-3 py-4 text-xs text-muted-foreground">
+            {upper} 暂无历史基线样本（21 个历史事件为 PEPE 11 + DOGE 10），相似性与研究指标未知/缺失，禁编造。本页仅展示实时信号。
+          </p>
+        )}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {events.map((e) => (
             <Link key={e.id} href={`/history/${e.id}`}>

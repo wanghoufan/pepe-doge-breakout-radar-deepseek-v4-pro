@@ -112,6 +112,12 @@ export async function GET() {
 
   const okxOk = candles.every((r) => r.ok) && tickers.ok;
   const binanceOk = binanceFundings.every((r) => r.ok);
+  // 口径说明（LOW收敛）：health.summary.okx 为四币全与（含 ETHFI+BTC，便于诊断单标故障）；
+  // overview 全局 status/freshness 门控只看核心三方（BTC+PEPE+DOGE），ETHFI 故障只降级自身
+  // （market-service.ts）。两者用途不同：health 看全链路，overview 看可交易门控。
+  // 加性字段 okxCore 与 overview 门控同口径（三币全与），旧 okx 字段保留兼容。
+  const coreIdx = candleCoins.map((c, i) => ({ c, i })).filter(({ c }) => c === 'BTC' || c === 'PEPE' || c === 'DOGE');
+  const okxCore = coreIdx.every(({ i }) => candles[i]!.ok) && tickers.ok;
 
   return NextResponse.json({
     ok: true,
@@ -125,6 +131,7 @@ export async function GET() {
     },
     summary: {
       okx: okxOk ? 'ok' : 'failed',
+      okxCore: okxCore ? 'ok' : 'failed',
       binance: binanceOk ? 'ok' : 'degraded',
       funding: resolvedFundings.some((r) => r.ok) ? 'ok' : 'failed',
     },

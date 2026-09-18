@@ -13,6 +13,7 @@ import { avg, emaSeries, meanTrueRangePct, median, pct } from '../indicators';
 import { percentileRank } from '../statistics';
 import { assessFundingFreshness, type FeedStatus } from '../freshness';
 import { detectBreakout, getRollingHigh, DEFAULT_BREAKOUT_CONFIG, type BreakoutSignal } from '../breakout';
+import { roundPriceLevel } from '../format';
 import { getRealtimeEpisodeMembership, FROZEN_EPISODE_RULE } from './episode';
 import { relativeReturn, relativeStrengthPercentile, relativeStrengthSlope } from '../relative-strength';
 import { determineStateV2 } from '../state-machine';
@@ -769,9 +770,10 @@ export function analyzeAssetV2(
   });
 
   const keyLevels: KeyLevels = {
-    resistance: rollingHigh,
-    breakoutLevel: breakoutConfirmed ? post.breakout!.level : null,
-    invalidation: rollingHigh != null ? rollingHigh * 0.94 : null,
+    // D1：浮点归一（epsilon级去伪影，非阈值/权重改动，不改变任何比较语义）。
+    resistance: roundPriceLevel(rollingHigh),
+    breakoutLevel: breakoutConfirmed ? roundPriceLevel(post.breakout!.level) : null,
+    invalidation: rollingHigh != null ? roundPriceLevel(rollingHigh * 0.94) : null,
     ema20,
   };
 
