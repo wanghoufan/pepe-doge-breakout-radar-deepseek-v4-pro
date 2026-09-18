@@ -361,6 +361,8 @@ export function AlertCenterHost() {
     // 隔离：测试预览 ACK 只关闭浮层，禁写 acked/历史（禁污染真实态）。
     const target = activeRef.current.find((a) => a.alertKey === key);
     if (target?.preview) {
+      // 测试预览同样可能有排队鸣响（持续模式），一并取消，但禁写 acked/历史。
+      cancelAlertSound(key);
       stopAlertSound();
       setActive((list) => list.filter((a) => a.alertKey !== key));
       return;
@@ -456,9 +458,10 @@ export function AlertCenterHost() {
       darkReason: null,
     };
     setActive((l) => [...l, { ...rec, shownAt: Date.now(), soundPaused: false, preview: true }]);
-    if (!s.muted) playAlertSound(s.selectedSoundId, s.volume, s.muted);
+    // 测试预览同样走所选 Pattern（如持续到确认则持续鸣响，与真实报警一致；隔离性不变）。
+    if (!s.muted) scheduleAlertSound(rec.alertKey, s.pattern, s.selectedSoundId);
     fireSystem(rec);
-  }, [fireSystem]);
+  }, [fireSystem, scheduleAlertSound]);
 
   // 停止当前所有声音（试听 + 真实报警声共用），取消全部排队鸣响并暂停各浮层声音标记。
   const stopAllSounds = useCallback(() => {
