@@ -17,7 +17,8 @@ import {
   LAYOUT_SCHEMA_VERSION,
   type WatchLayout,
 } from '../layout';
-import { getEnabledAssets, type RegistryAsset } from '../registry';
+import type { RegistryAsset } from '../registry';
+import { getServerRegistry } from './registry-service';
 
 export interface LayoutLoadResult {
   layout: WatchLayout;
@@ -38,7 +39,7 @@ interface LayoutRow {
 /** 读取配置：无记录用默认；损坏 / 过期 / 非法项安全迁移并可回退。db 传 null（持久化不可用）直接回默认，不抛错。 */
 export function readLayout(
   db: DatabaseSync | null = tryOpenDb(),
-  registry: RegistryAsset[] = getEnabledAssets(),
+  registry: RegistryAsset[] = getServerRegistry(),
 ): LayoutLoadResult {
   if (!db) {
     return {
@@ -103,7 +104,7 @@ export interface WriteResult {
 export function writeLayout(
   input: unknown,
   db: DatabaseSync | null = tryOpenDb(),
-  registry: RegistryAsset[] = getEnabledAssets(),
+  registry: RegistryAsset[] = getServerRegistry(),
 ): WriteResult {
   if (!db) {
     return { ok: false, errors: ['配置持久化当前不可用（只读文件系统），本次修改未保存'], layout: defaultLayout() };
@@ -143,7 +144,7 @@ export function writeLayout(
 /** 清除配置（恢复默认 4 卡）。db 为 null 时直接回默认。 */
 export function resetLayout(
   db: DatabaseSync | null = tryOpenDb(),
-  registry: RegistryAsset[] = getEnabledAssets(),
+  registry: RegistryAsset[] = getServerRegistry(),
 ): WatchLayout {
   if (!db) return defaultLayout();
   db.exec('BEGIN');

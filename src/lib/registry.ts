@@ -41,6 +41,27 @@ export interface RegistryAsset {
   source: 'seed' | 'okx';
 }
 
+/** 单条核验结论（逐项可解释：值/来源/成败原因）。 */
+export interface VerificationCheck {
+  key: string;
+  label: string;
+  ok: boolean;
+  detail: string;
+}
+
+/**
+ * 已持久化的核验记录（对应 SQLite `asset_verification` 一行）。
+ * `ok` 为全部 checks 的合取；仅 ok=true 的记录会把标的置为 enabled。
+ */
+export interface AssetVerificationRecord {
+  assetId: string;
+  instrument: string;
+  ok: boolean;
+  checks: VerificationCheck[];
+  verifiedAt: number;
+  by: string;
+}
+
 export const ASSET_STATUS_META: Record<AssetStatus, { label: string; description: string }> = {
   candidate: { label: '候选', description: 'OKX 公开永续目录记录，未核验，不可启用' },
   verified: { label: '已核验', description: '逐币数据源核验通过，具备启用资格' },
@@ -114,6 +135,61 @@ export function getEnabledAssets(registry: RegistryAsset[] = getSeedRegistry()):
 /** 环境参照标的（role=reference，如 BTC），不进入信号池；按 sortOrder 稳定排序。 */
 export function getReferenceAssets(registry: RegistryAsset[] = getSeedRegistry()): RegistryAsset[] {
   return registry.filter((a) => a.role === 'reference').sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+/**
+ * 把持久化核验记录合并进注册表（纯函数，幂等）：
+ * - 记录 ok=true 且命中已有 signal 标的 → 置为 enabled，写入 verifiedAt 与证据摘要；
+ * - OKX 目录暂不可用时，已核验标的可凭记录「再水化」为 enabled（不依赖网络）；
+ * - reference（BTC）与不通过记录一律不动；candidate 绝不因目录合并而 enabled。
+ */
+export function applyVerifications(
+  registry: RegistryAsset[],
+  records: AssetVerificationRecord[],
+): RegistryAsset[] {
+  const passed = records.filter((r) => r.ok === true);
+  const byId = new Map(passed.map((r) => [r.assetId, r]));
+  const byInst = new Map(passed.map((r) => [r.instrument, r]));
+  const next = registry.map((a) => {
+    if (a.role !== 'signal') return a;
+    const rec = byId.get(a.id) ?? byInst.get(a.instId);
+    if (!rec) return a;
+    return {
+      ...a,
+      status: 'enabled' as AssetStatus,
+      verifiedAt: rec.verifiedAt,
+      evidence: summarizeVerification(rec),
+    };
+  });
+  for (const rec of passed) {
+    if (next.some((a) => a.id === rec.assetId || a.instId === rec.instrument)) continue;
+    const symbol = rec.assetId;
+    next.push({
+      id: symbol,
+      instId: rec.instrument,
+      spotInstId: rec.instrument.endsWith('-SWAP') ? rec.instrument.slice(0, -'-SWAP'.length) : rec.instrument,
+      name: symbol,
+      symbol,
+      role: 'signal',
+      status: 'enabled',
+      fundingBinanceSymbol: null,
+      hasHistoryBaseline: false,
+      sortOrder: 20_000 + next.length,
+      themecolor: '#94A3B8',
+      verifiedAt: rec.verifiedAt,
+      evidence: summarizeVerification(rec),
+      source: 'okx',
+    });
+  }
+  return next;
+}
+
+/** 核验证据摘要（人读一句，供注册表 evidence 字段）。 */
+export function summarizeVerification(rec: AssetVerificationRecord): string {
+  const total = rec.checks.length;
+  const okCount = rec.checks.filter((c) => c.ok).length;
+  const at = new Date(rec.verifiedAt).toISOString();
+  return `逐币核验 ${okCount}/${total} 项通过（by ${rec.by}，${at}）`;
 }
 
 /** 候选池（candidate，仅登记，不可选）。 */

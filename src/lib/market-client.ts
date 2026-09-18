@@ -550,6 +550,11 @@ export interface OkxSwapInstrument {
   ctVal: string | null;
   ctValCcy: string | null;
   listTime: number | null;
+  /** 价格最小变动单位（精度核验）；缺失为 null。 */
+  tickSz: string | null;
+  /** 数量最小变动单位 / 最小下单量（精度核验）；缺失为 null。 */
+  lotSz: string | null;
+  minSz: string | null;
 }
 
 /**
@@ -562,7 +567,20 @@ export async function getOkxSwapInstruments(): Promise<Result<OkxSwapInstrument[
   if (!res.ok) return res;
 
   const body = res.data as
-    | { code?: string; msg?: string; data?: { instId: string; state: string; ctVal?: string; ctValCcy?: string; listTime?: string }[] }
+    | {
+        code?: string;
+        msg?: string;
+        data?: {
+          instId: string;
+          state: string;
+          ctVal?: string;
+          ctValCcy?: string;
+          listTime?: string;
+          tickSz?: string;
+          lotSz?: string;
+          minSz?: string;
+        }[];
+      }
     | null;
   if (!body || body.code !== '0' || !Array.isArray(body.data)) {
     return {
@@ -585,6 +603,9 @@ export async function getOkxSwapInstruments(): Promise<Result<OkxSwapInstrument[
       ctVal: r.ctVal ?? null,
       ctValCcy: r.ctValCcy ?? null,
       listTime: r.listTime ? Number(r.listTime) : null,
+      tickSz: r.tickSz ?? null,
+      lotSz: r.lotSz ?? null,
+      minSz: r.minSz ?? null,
     }));
   return { ok: true, data, diag: res.diag };
 }

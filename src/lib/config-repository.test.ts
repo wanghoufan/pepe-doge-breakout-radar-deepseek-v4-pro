@@ -25,10 +25,10 @@ test('SQLite：Migration 建立表且幂等', () => {
   withTempDb((db) => {
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((r) => String(r.name));
     assert.ok(tables.includes('watch_layout'));
+    assert.ok(tables.includes('asset_verification'));
     assert.ok(tables.includes('schema_migrations'));
-    const migrations = db.prepare('SELECT version FROM schema_migrations').all();
-    assert.equal(migrations.length, 1);
-    assert.equal(String(migrations[0].version), '0001_init.sql');
+    const migrations = db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map((r) => String(r.version));
+    assert.deepEqual(migrations, ['0001_init.sql', '0002_asset_verification.sql']);
   });
 });
 

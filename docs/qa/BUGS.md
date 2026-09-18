@@ -94,3 +94,16 @@
 - 无胜率表述：`rg 胜率 src/` 命中均为合规禁令声明（BANNED_COPY_WORDS／页脚“不输出胜率…”／测试断言），无面向交易决策的概率化收益表述 → 通过
 - 真机预检：本轮为 API＋SSR＋纯函数验证，无真机 session，记 NOT_VERIFIED
 - 结论：PASS，新 BUG 0（沿用既有 BUG-001/002/003＋INFO，不新增）
+
+## QA-2026-09-18-第三轮｜核验启用闭环回归（CODE_REVIEW 终核 PASS 后）
+
+- 基线：DEV_BASELINE=PRODUCT_PLAN_V0.2；CODE_REVIEW 第三轮终核 PASS（2026-09-18，mapVerifyOutcomeToHttp＋四分支测试）
+- 单元/类型：`pnpm test` 226/226 通过；`pnpm ts-check` exit 0（tsc 无输出）
+- 接口（PORT=5123，`GET /` → 200）：
+  - `GET /api/assets` → 200：`enabled=[PEPE,DOGE,ETHFI]`，`candidates.status=unavailable`（沙箱 OKX DNS 墙 EHOSTDOWN，预期）＋`items` 含三币启用记录（verified:true，ETHFI hasHistoryBaseline:false）
+  - `POST /api/assets/verify {"id":"UNKNOWNXXX"}` → 422＋`ok:false`＋checks[resolve].ok=false“未知标的…不在 OKX 永续候选目录”（P1-blocking route 级 422 映射行为在位）
+  - `GET /api/config` → 200：默认 `tier:4`（slots 全空、persisted:false），符合“首次默认 4 卡”
+- 无胜率表述：`rg 胜率|准确率` 命中仅合规禁令声明（页脚“不输出胜率…”、methodology DISCLOSURES、“不输出胜率与开仓建议”）＋alert-center 禁语表/测试断言；无面向交易决策的概率化收益表述 → 通过
+- 端口记账：`:5123` 上有本任务开始前已存在的监听进程（PID 14269，13:30 起，未动）；自起 dev 因 `.next/dev/lock` 冲突未能绑定，API 实测走该既存实例（同一工作树代码），自起进程已杀、`/tmp/qa-5124*` 与 `/tmp/qa-5123-verify*` 已删，`var/` 不存在无残留
+- 真机预检：本轮为 API＋SSR＋grep 验证，无真机 session，记 NOT_VERIFIED
+- 结论：PASS，新 BUG 0（沿用既有 BUG-001/002/003＋INFO，不新增）

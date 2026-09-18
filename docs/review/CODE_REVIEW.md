@@ -58,3 +58,32 @@
 - 备份合规：可执行逻辑无硬编码宿主机绝对路径（环境变量优先，默认 repo 相对路径）；备份用 `.backup` 在线快照、拒绝直接 cp；verify 先 cp 到 mktemp 隔离目录再只读检查（integrity_check / foreign_key_check / schema version / watch_layout 业务读取）；恢复替换不在脚本内自动执行，文档明确"用户批准后才允许替换生产"＋三条禁止（未验证覆盖/开发库覆盖生产/删全部历史备份）。通过。
 - 无胜率表述：本轮 diff grep（胜率/准确率/win rate/precision/recall）仅命中测试内 fundingOk 样例 symbol 与既有注释，无面向交易决策的概率化收益表述；研究指标未进入信号/报警。通过。
 - 测试：`pnpm test` 214/214 通过（212 基线＋新增 DYNAMIC-1/2 两项：WIF 合成第 4 标的出信号＋映射；WIF 故障只降级自身）；isolation 单文件 9/9；DYNAMIC 断言覆盖 signals/prices/freshnessByCoin/fundingTs/errors 四类，真覆盖非摆设。
+
+## 第三轮复审（核验启用闭环，2026-09-18）
+
+- Task: 核验启用闭环（DEV_BASELINE=PRODUCT_PLAN_V0.2）
+- Commit: HEAD 起工作区 diff（db/migrations/0002、registry.ts VerificationCheck/applyVerifications、asset-verification.ts、server/asset-verification-repository.ts、server/registry-service.ts、api/assets/verify/route.ts、AssetPicker 核验按钮、WatchBoard 接线、SignalCard meta 覆盖、asset-verification.test.ts；market-client tickSz/lotSz/minSz 透出；market-service/layout-repository 默认注册表切 getServerRegistry）
+- Reviewer: code-reviewer（本窗口，只审不改）
+- Result: CONDITIONAL（P1-blocking 1；P0 0；P2 3；改法均为 builder 指引）
+
+## P0 / P1 Findings
+
+- P1-blocking（必须改 1）：verify 失败路径缺 route 级 422 映射测试。asset-verification.test.ts 真覆盖了核验逻辑失败分支（资金费率单项失败／精度缺失／K 线过短／429 限频／未知标的／ok=false 不得启用，16/16 通过已复跑），但 `POST /api/assets/verify` 的三个 HTTP 分支（未知标的→422、outcome 未过→422 写清首个失败项、db 为 null→503 未启用）无任何测试覆盖；分支内 message/checks 组装（WatchBoard 错误展示依赖 `body.checks`＋`message` 形状）一旦改错，单测全绿也拦不住。改法：加 route 级测试（注入假 deps 或抽 `verifyAssetById`＋db 为 null 双 double，断言三分支 status＋`ok:false`＋checks 非空＋失败后无落库）；或由 QA 以真机 422 用例书面认领，supervisor 确认后可降级。
+- 无 P0；其余 P1 全部通过：任一失败不得 enabled（route 先判 `!asset`→422、再判 `!outcome.ok`→422，最后才 saveVerification；repository 仅全过调用；applyVerifications 只认 `ok===true` 记录，损坏 JSON 降解为 ok=false；WatchBoard 失败只置 verifyState error、不刷新启用列表）。通过。
+
+## P2 / P3 Backlog Findings
+
+- P2：getServerRegistry 默认参数每次调用 tryOpenDb（market-service/layout-repository 默认值）。功能正确（读失败降级 seed），仅多一次 open 尝试；后续可由调用方显式传 registry 或缓存 seed＋records 合并结果。
+- P2：applyVerifications 再水化新标的用 `name=symbol=id`＋固定灰色 themecolor＋sortOrder 20_000+。与候选注册口径一致、可接受；后续若 OKX symbol 与展示名分化，记得补 name 映射而非沿用 id。
+- P2：0002 迁移无 down（与 0001 同策略，IF NOT EXISTS 幂等已由 config-repository 单测覆盖）。回滚靠代码版本＋备份脚本，不新增 down 文件；记一笔即可。
+- P3：无。
+
+## 红线核查（全部通过）
+
+- Quant 红线零改动：indicators.ts / state-machine.ts / v2/engine.ts 本轮 diff 为空；config.ts 仅被 asset-verification.ts 只读 `DEFAULT_V2_THRESHOLDS.breakoutLookbackCandles + 1` 作最小 K 线数，未复制未修改阈值/权重/状态机。通过。
+- seed 三币行为不变：applyVerifications 空记录时三币仍 enabled（单测已断言 PEPE/DOGE/ETHFI）；CORE_IDS 与 legacy 字段未动；market-service 默认注册表由 seed 切 getServerRegistry（seed＋已持久化记录，无记录时恒等于 seed）。通过。
+- ETHFI 无基线隔离仍在：新水化标的 `hasHistoryBaseline:false`；SignalCard 对无基线显示"未知/缺失"（metaOverride 透传注册表值，内置 ASSETS 缺键时回退灰色未知）；再水化 HYPE 断言 source=okx＋无基线。通过。
+- 无胜率表述：新增文件 grep（胜率/买入/概率化收益）零命中；仅 AssetPicker 一处注释"文案不输出任何胜率/收益表述"的方法论声明；checks detail 均为数据源证据句。通过。
+- 测试：asset-verification.test.ts 8 项＋config-repository（含 0002 幂等断言）共 16/16 通过（已复跑）；失败路径为真覆盖（注入假 deps，无网络）。route 级 422 映射为例外缺项（见 P1-blocking）。
+
+## 终核（P1-blocking 闭环，2026-09-18）：PASS —— mapVerifyOutcomeToHttp 纯函数存在（asset-verification.ts:238），四分支测试真覆盖且断言形状（未知422/未过422/503/200，asset-verification.test.ts:229-279）；route 已改调该函数、无重复映射逻辑（route.ts:38-41）；pnpm test 226/226＋tsc exit 0 全绿。

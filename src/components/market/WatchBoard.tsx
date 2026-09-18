@@ -5,7 +5,7 @@ import { useApi } from '@/hooks/use-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SignalCard } from './SignalCard';
-import { AssetPicker, type EnabledAsset } from './AssetPicker';
+import { AssetPicker, type EnabledAsset, type CandidateAsset, type VerifyUiState } from './AssetPicker';
 import { SourceLine, DiagBox, SourceFreshnessRow, CandleFreshnessBlock, type DiagLike } from './DataStatus';
 import { OKX_PERP_LINE } from '@/lib/config';
 import { formatPrice, formatPct, formatTs, relativeTime } from '@/lib/format';
@@ -20,6 +20,7 @@ import {
   type WatchLayout,
 } from '@/lib/layout';
 import type { FeedFreshness, FeedStatus } from '@/lib/freshness';
+import type { RegistryAsset } from '@/lib/registry';
 import type { AssetId, AssetSignal } from '@/lib/types';
 
 interface OverviewResp {
@@ -69,7 +70,16 @@ interface ConfigResp {
 
 interface AssetsResp {
   ok: boolean;
-  candidates: { status: 'live' | 'unavailable'; total: number; sample: string[]; error: string | null; note: string };
+  candidates: {
+    status: 'live' | 'unavailable';
+    total: number;
+    candidateCount: number;
+    enabledCount: number;
+    sample: string[];
+    error: string | null;
+    note: string;
+    items: CandidateAsset[];
+  };
   enabled: EnabledAsset[];
   reference: { id: string; name: string; symbol: string; instId: string }[];
 }
@@ -89,11 +99,74 @@ export function WatchBoard() {
   const configApi = useApi<ConfigResp>('/api/config');
   const assetsApi = useApi<AssetsResp>('/api/assets');
 
+  // 客户端布局校验注册表 = 服务端已启用集合（含逐币核验启用的新标的）。
+  // 未拿到 /api/assets 时回退 undefined，由 layout 纯函数使用内置 seed 注册表。
+  const enabled = assetsApi.data?.enabled ?? [];
+  const clientRegistry = useMemo<RegistryAsset[]>(
+    () =>
+      (assetsApi.data?.enabled ?? []).map((a) => ({
+        id: a.id,
+        instId: a.instId,
+        spotInstId: a.instId.endsWith('-SWAP') ? a.instId.slice(0, -'-SWAP'.length) : a.instId,
+        name: a.name,
+        symbol: a.symbol,
+        role: 'signal',
+        status: 'enabled',
+        fundingBinanceSymbol: null,
+        hasHistoryBaseline: a.hasHistoryBaseline,
+        sortOrder: 0,
+        themecolor: a.themecolor,
+        verifiedAt: null,
+        evidence: null,
+        source: 'okx',
+      })),
+    [assetsApi.data],
+  );
+  const layoutRegistry = clientRegistry.length ? clientRegistry : undefined;
+
   const [config, setConfig] = useState<WatchLayout | null>(null);
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [verifyState, setVerifyState] = useState<Record<string, VerifyUiState>>({});
   const hydrated = useRef(false);
+
+  const refreshAssets = assetsApi.refresh;
+  const handleVerify = useCallback(
+    async (assetId: string) => {
+      setVerifyState((s) => ({ ...s, [assetId]: { status: 'loading' } }));
+      try {
+        const res = await fetch('/api/assets/verify', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ id: assetId }),
+        });
+        const body = (await res.json().catch(() => null)) as
+          | { ok?: boolean; message?: string; checks?: { ok: boolean; label: string; detail: string }[] }
+          | null;
+        if (!res.ok || !body?.ok) {
+          const failed = body?.checks
+            ?.filter((c) => !c.ok)
+            .map((c) => `${c.label}：${c.detail}`)
+            .join('；');
+          setVerifyState((s) => ({
+            ...s,
+            [assetId]: { status: 'error', reason: failed || body?.message || `核验失败（${res.status}）` },
+          }));
+          return;
+        }
+        setVerifyState((s) => ({ ...s, [assetId]: { status: 'idle' } }));
+        setNotice(`${assetId} 核验通过并已启用；可在「已启用」列表中放入卡槽。`);
+        refreshAssets();
+      } catch (err) {
+        setVerifyState((s) => ({
+          ...s,
+          [assetId]: { status: 'error', reason: err instanceof Error ? err.message : String(err) },
+        }));
+      }
+    },
+    [refreshAssets],
+  );
 
   const persist = useCallback(async (next: WatchLayout) => {
     setConfig(next);
@@ -126,20 +199,21 @@ export function WatchBoard() {
   }, []);
 
   // 首次拿到服务端配置：规范化 + 空槽确定性补位；从未持久化则落盘默认布局。
+  // 等 /api/assets 就绪（或失败）再用已启用集合规范化，避免把已核验启用的新标的误清除。
+  const assetsUsable = !!assetsApi.data || !!assetsApi.error;
   useEffect(() => {
-    if (hydrated.current || !configApi.data) return;
+    if (hydrated.current || !configApi.data || !assetsUsable) return;
     hydrated.current = true;
     if (configApi.data.notice) setNotice(configApi.data.notice);
-    const normalized = normalizeLayout(configApi.data.config);
+    const normalized = normalizeLayout(configApi.data.config, layoutRegistry);
     if (configApi.data.persisted) {
       setConfig(normalized);
     } else {
-      const filled = fillSlots(normalized);
+      const filled = fillSlots(normalized, layoutRegistry);
       void persist(filled);
     }
-  }, [configApi.data, persist]);
+  }, [configApi.data, assetsUsable, layoutRegistry, persist]);
 
-  const enabled = assetsApi.data?.enabled ?? [];
   const enabledById = useMemo(() => new Map(enabled.map((a) => [a.id, a])), [enabled]);
   const live = overview.data?.status === 'live';
   const btc = overview.data?.data.btc;
@@ -166,9 +240,10 @@ export function WatchBoard() {
   const activeAssetId = activeSlot != null && config ? (config.slots[activeSlot] ?? null) : null;
   const usedCount = config ? config.slots.filter(Boolean).length : 0;
 
+  const candidateAssets = assetsApi.data?.candidates.items ?? [];
   const candidateNote = assetsApi.data
     ? assetsApi.data.candidates.status === 'live'
-      ? `候选池 ${assetsApi.data.candidates.total} 个 OKX 永续，均未核验，暂不可启用。`
+      ? `OKX 永续候选池共 ${assetsApi.data.candidates.total} 个：${assetsApi.data.candidates.enabledCount} 个已启用，${assetsApi.data.candidates.candidateCount} 个待核验（核验通过方可启用）。`
       : `候选池暂不可拉取（${assetsApi.data.candidates.error ?? '未知原因'}）。`
     : null;
 
@@ -187,7 +262,7 @@ export function WatchBoard() {
                 onClick={() => {
                   if (!config || t === config.tier) return;
                   setNotice(null);
-                  void persist(withTier(config, t));
+                  void persist(withTier(config, t, layoutRegistry));
                 }}
               >
                 {t} 卡
@@ -316,7 +391,7 @@ export function WatchBoard() {
                         className="hover:text-foreground"
                         onClick={() => {
                           if (!config) return;
-                          const r = assignSlot(config, i, null);
+                          const r = assignSlot(config, i, null, layoutRegistry);
                           void persist(r.layout);
                         }}
                       >
@@ -328,6 +403,7 @@ export function WatchBoard() {
                 {asset ? (
                   <SignalCard
                     asset={asset.id as AssetId}
+                    meta={{ symbol: asset.symbol, themecolor: asset.themecolor, hasHistoryBaseline: asset.hasHistoryBaseline }}
                     signal={overview.data?.data.signals?.[asset.id] ?? null}
                     loading={overview.loading && !overview.data}
                     price={overview.data?.data.prices?.[asset.id]?.last ?? null}
@@ -355,12 +431,15 @@ export function WatchBoard() {
       {activeSlot != null && config ? (
         <AssetPicker
           assets={enabled}
+          candidates={candidateAssets}
           favorites={config.favorites}
           usedElsewhere={usedElsewhere}
           activeAssetId={activeAssetId}
           candidateNote={candidateNote}
+          verifyState={verifyState}
+          onVerify={handleVerify}
           onSelect={(assetId) => {
-            const r = assignSlot(config, activeSlot, assetId);
+            const r = assignSlot(config, activeSlot, assetId, layoutRegistry);
             if (r.error) {
               setNotice(r.error);
               return;
@@ -370,7 +449,7 @@ export function WatchBoard() {
             setActiveSlot(null);
           }}
           onToggleFavorite={(assetId) => {
-            void persist(toggleFavorite(config, assetId));
+            void persist(toggleFavorite(config, assetId, layoutRegistry));
           }}
           onClose={() => setActiveSlot(null)}
         />

@@ -27,7 +27,8 @@ import {
   type FeedFreshness,
 } from './freshness';
 import { relativeReturn } from './relative-strength';
-import { getEnabledAssets, getReferenceAssets, getSeedRegistry, type RegistryAsset } from './registry';
+import { getEnabledAssets, getReferenceAssets, type RegistryAsset } from './registry';
+import { getServerRegistry } from './server/registry-service';
 import {
   getFundingByInst,
   getOkxCandlesByInst,
@@ -177,7 +178,7 @@ export interface MarketFetchResults {
 /** 全局门控核心三方（BTC 环境 + PEPE + DOGE）；其余标的不拖垮全局。 */
 const CORE_IDS = ['BTC', 'PEPE', 'DOGE'] as const;
 
-export async function getMarketOverview(registry: RegistryAsset[] = getSeedRegistry()): Promise<MarketOverview> {
+export async function getMarketOverview(registry: RegistryAsset[] = getServerRegistry()): Promise<MarketOverview> {
   const generatedAt = Date.now();
 
   // 动态拉取集合 = BTC 参照 + 已启用信号标的；按 instId 去重（限频/缓存由 market-client 承担）。

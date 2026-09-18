@@ -34,6 +34,7 @@ export function SignalCard({
   dataStatus,
   staleReason,
   loading,
+  meta: metaOverride,
 }: {
   asset: AssetId;
   signal: AssetSignal | null;
@@ -44,8 +45,13 @@ export function SignalCard({
   staleReason?: string | null;
   /** 首载 loading 时给骨架占位（min-h 防 CLS）；缺省按不可用处理。 */
   loading?: boolean;
+  /** 展示元数据覆盖（动态启用标的来自注册表，不在内置 ASSETS）。 */
+  meta?: { symbol: string; themecolor: string; hasHistoryBaseline: boolean } | null;
 }) {
-  const meta = ASSETS[asset];
+  const meta =
+    metaOverride ??
+    ASSETS[asset as keyof typeof ASSETS] ??
+    { symbol: String(asset), themecolor: '#94A3B8', hasHistoryBaseline: false };
   const action = deriveActionState(
     actionInputFromSignal(signal, { asset, price: price ?? null, priceTs: priceTs ?? null, forcedStatus: dataStatus, staleReason }),
   );

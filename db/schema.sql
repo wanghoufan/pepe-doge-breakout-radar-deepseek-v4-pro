@@ -21,3 +21,13 @@ CREATE TABLE IF NOT EXISTS watch_layout (
   favorites_json TEXT NOT NULL,
   updated_at     INTEGER NOT NULL
 );
+
+-- 逐币核验记录：候选标的只有在全过核验后写入本表并进入 enabled。
+-- checks_json: JSON 对象 { ok, checks:[{key,label,ok,detail}] }，保留完整证据链。
+CREATE TABLE IF NOT EXISTS asset_verification (
+  asset_id    TEXT PRIMARY KEY,
+  instrument  TEXT NOT NULL,
+  checks_json TEXT NOT NULL,
+  verified_at INTEGER NOT NULL,
+  by          TEXT NOT NULL
+);
