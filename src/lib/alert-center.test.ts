@@ -202,7 +202,9 @@ test('B-TEST14：sanitizeSettings + 测试报警隔离（禁写真实历史）',
   const hostSrc = fs.readFileSync(path.join(here, '../components/market/AlertCenter.tsx'), 'utf8');
   const sendStart = hostSrc.indexOf('const sendTest');
   assert.ok(sendStart >= 0, 'sendTest 存在');
-  const sendBlock = hostSrc.slice(sendStart, hostSrc.indexOf('}, [fireSystem]);', sendStart));
+  const sendEnd = hostSrc.indexOf('}, [fire', sendStart);
+  assert.ok(sendEnd > sendStart, 'sendTest 块结尾可定位');
+  const sendBlock = hostSrc.slice(sendStart, sendEnd);
   assert.ok(sendBlock.length > 0, 'sendTest 块可提取');
   assert.ok(!sendBlock.includes('pushHistory'), 'sendTest 禁写历史（pushHistory）');
   assert.ok(!sendBlock.includes('setHistory'), 'sendTest 禁写历史（setHistory）');
