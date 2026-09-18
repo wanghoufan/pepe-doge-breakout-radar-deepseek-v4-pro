@@ -69,3 +69,14 @@
 - 沙箱记账：`/api/market/overview` status=unavailable（OKX DNS 墙 EHOSTDOWN 169.254.0.2），`/api/market/candles` → 503 真实诊断；属预期，不判缺陷
 - 真机预检：本轮为 API＋SSR 验证，无真机 session，记 NOT_VERIFIED（未做 hydrated 像素级验证）
 - 结论：PASS，新 BUG 0（沿用既有 BUG-001/002/003＋INFO，不新增）
+
+## QA-2026-09-18-生产真机（headless Chromium，无头，不碰用户键鼠）
+
+- 范围：`066f76d` 部署后生产站（含 Vercel 只读 FS 修复）
+- 整改验证：`/api/config` 200（默认 4 卡）；PUT 6 档 ok → 改回 4 档 ok；重复卡 PUT → 400；`/api/assets` 200
+- 页面/API 全绿：`/`、三详情页、history、similarity、methodology、overview、health、candles、funding、history、similarity/current 全部 200；similarity ETHFI 按设计 400
+- 无头渲染：首页观察盘/卡片正常，JS 报错 0；6 档按钮可点；ETHFI 详情「未知/缺失」在位
+- 胜率：唯一命中为禁令声明文案（“不输出胜率…”），无概率化收益表述
+- Vercel 声明：WatchBoard＋页脚「Vercel 生产环境不保证跨部署保存」在位
+- 截图：/var/folders/mp/mnxk3h8x4wq5ztr7__vlplp40000gn/T/opencode/qabrowser/qa-home.png、qa-ethfi.png（工作区外，不进仓）
+- 结论：PASS，新 BUG 0
