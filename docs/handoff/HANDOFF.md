@@ -1,144 +1,32 @@
-# HANDOFF — 项目交接文档
+# HANDOFF｜交接（暂停/恢复用，先读我）
 
-> 生成时间：2026-09-15 16:30 UTC+8
-> 生成者：CodeArts Agent
-> 项目：pepe-doge-breakout-radar-deepseek-v4-pro（山寨滚仓网站）
+> 旧版字段（governance-state / Evidence / Human Gate / Promotion / Dispatch ID）已废弃，不填。
 
----
+- Captured at（YYYY-MM-DD HH:MM）：2026-09-18 13:45
+- PROJECT_PHASE：DEVELOP（Human Gate 已批准；DEV_BASELINE=PRODUCT_PLAN_V0.2）
+- PLAN_VERSION：PRODUCT_PLAN_V0.2
+- PLAN_READINESS_SCORE：94（第二轮 PASS）
+- PLAN_GATE：APPROVED
+- DEV_BASELINE：PRODUCT_PLAN_V0.2（Phase2 锁定，变更只走 Change C）
+- CHANGE_REQUEST：C（已成立：加币＋注册表重构＋SQLite 配置；范围以 V0.2 为准）
+- Stage ID（本阶段叫什么）：多标的观察盘 MVP（radar-live）
+- 剩 P0（没完的才列，多一条都不行）：无（DEV 链全PASS，supervisor复检PASS，打回 0/2）
+- 人类5决策回执（2026-09-18 12:55，用户原话收录）：①首批币=交易所公开可拉取的全部币（OKX 永续为准，全量进注册表，启用前逐币核验）；②卡片档位按 4/6/9 先来；③筛选=搜名字＋收藏；④不允许重复卡，一币一卡；⑤档位即布局切换（1分4/1分6/1分9），币数与槽位对齐；⑥配置存储用户定：本地 SQLite（服务端文件）；TM 已告知 Vercel 生产文件系统短暂、生产持久化另议。
+- 当前 Task（正干到哪）（累计打回 n/2，supervisor每次打回时TM同步更新）：DEV-多标的观察盘已收工待交付；累计打回 0/2
+- 执行链/Session（可选，仅真 resume 通道填，普通 subagent 可空；TM 只记录/引用，ID 由基础设施返回，不手造、不要求用户复制；返工确认是否原链；senior 升级开新链后更新）：builder opencode直调同链返工2轮；reviewer/QA 本窗口；supervisor opencode直调
+- 未闭环评审意见（code-reviewer/qa 留的还没改的）：无（P1-blocking×2已闭环终核PASS；P1-非blocking备份演练/market-service动态化＋P2记后续）
+- docs 落盘清单（本轮新增/改了哪几个 docs 文件）：docs/pm/PRODUCT_PLAN.md（V0.2）、docs/review/RESEARCH_REVIEW.md（第2轮PASS）、docs/review/CODE_REVIEW.md（含终核PASS）、docs/qa/BUGS.md（QA PASS 0新BUG）、docs/model/两账本（示例行已删＋首批真实行已落）、本HANDOFF
+- 下一步（Next Single Action）：用户定夺commit＋push（main）触发Vercel部署；部署后复验 /api/config、/api/assets、首页观察盘
+- 人要拍什么板（列出来问，不问不许开工）：commit＋push（main）是否执行（迁移整理＋Phase1＋DEV 三批改动一次推，见 git status）
+- 用户新意图（2026-09-18 12:40，Phase1 规划输入）：①交易所式标的列表（筛选/切换）；②首页卡片可自定义固定数量；③每卡可切换单个标的。用户确认「就这个核心功能」。范围冲突：现冻结约束仅 PEPE/DOGE/ETHFI＋BTC，用户提到关注 6 个标的→涉加币，TM 暂按 CHANGE C（产品范围变更）候选记，待 Planner 方案＋Human Gate 定。
+- 用户澄清（12:45）：固定数量不锁定为 6，可配（4/6/9 任意）。
+- Planner 首派未落盘（codex 只读沙箱拒写，现状核实完成，P0 5 条已带回）；已重派（workspace-write）出 PRODUCT_PLAN 初版。
+- CHANGE_REQUEST 候选：C（待定，以 Planner 方案为准）
+- permission_request（可选：原文/决策/回执一句，首版可先记自然语言一句）：迁移整理全程自动已授权；commit/push 按次单独确认（本次未提交）
+- 收尾记一笔（neat-freak：文档对齐了没、临时文件清了没、未决列完没；neat 派完后 TM 补记，若已落盘则追加修订行）：归位表已落盘；备份 3（AGENTS/分工表/HANDOFF 旧版同级保留）；账本示例行已删（TASK/DISPATCH 各 1 行）；未决：母版分工表无 db-admin 行（备份保留）、PROJECT_PROGRESS.md 仍旧口径。
+- 修订行（2026-09-18 严查）：母版演进已同步——AGENTS 9+1→9+1＋1 专项重铺（合版另存）、db-admin 角色卡已铺（分工表软链自动跟上）、task-manager 卡已换新；合并校验：项目旧规矩逐字节无损（仅空行差）。
 
-## 一、当前工作进度
+## 恢复读盘（全体系唯一顺序，别乱）
 
-### 已完成（本会话）
-
-| 项目 | 状态 | 时间 |
-|------|------|------|
-| 浅色模式开发 | ✅ 完成 | 2026-09-15 |
-| TypeScript 类型检查 | ✅ 0 错误 | 2026-09-15 |
-| ESLint 检查 | ✅ 0 告警 | 2026-09-15 |
-| StyleLint 检查 | ✅ 0 错误 | 2026-09-15 |
-| Git 提交 `65ced4d` | ✅ feat: 浅色模式 + 主题切换 | 2026-09-15 |
-| Git push | ✅ origin/main | 2026-09-15 |
-| Vercel 部署 | ✅ Ready | 2026-09-15 |
-
-### 浅色模式实现细节
-
-**1. `src/app/globals.css`**
-- `:root` → 浅色模式：白底 `#f8fafc`、深色文字 `#0f172a`、卡片白 `#ffffff`、边框 `slate-200`
-- `.dark` → 深空雷达站：原有深色配色，50+ CSS 变量全覆盖
-- 品牌荧光绿 `#2ee6a8` 双模式保持一致
-
-**2. `src/app/layout.tsx`**
-- 接入 `ThemeProvider`，`attribute="class"`，默认 `system`
-- 移除硬编码 `className="dark"`
-- 添加 `suppressHydrationWarning` 防止 SSR 水合闪烁
-- `disableTransitionOnChange` 避免主题切换动画跳变
-
-**3. `src/components/layout/SiteHeader.tsx`**
-- 右上角太阳/月亮图标按钮
-- 点击循环切换：light → dark → system
-- `mounted` 状态防止客户端渲染不匹配
-- localStorage 记住用户偏好
-
-**4. `stylelint.config.mjs`**
-- 放宽 `@apply` 校验，解决历史遗留问题
-
-### 线上地址
-
-```
-https://pepe-doge-breakout-radar-deepseek-v4-zyt0he48v-houfan.vercel.app
-```
-
----
-
-## 二、下一步任务
-
-### 待处理（按优先级）
-
-| 优先级 | 任务 | 来源 | 状态 |
-|--------|------|------|------|
-| P2 | BUG-001：`rolling 阻力` 文案改名为 `当前下一压力` | BUGS.md | 待处理 |
-| P2 | BUG-002：方法论「风险分」改名为 `Entry Heat` | BUGS.md | 待处理 |
-| P2 | BUG-003：Follow-through `WEAK≥35` 文档与实现不一致 | BUGS.md | 待处理 |
-| Info | INFO-001：`partial` 死类型清理 | BUGS.md | 建议 |
-| Info | INFO-002：`price == invalidationLevel` 改为 `<=` | BUGS.md | 建议 |
-| Info | INFO-003：`heldAbove=null` 语义确认 | BUGS.md | 建议 |
-| Style | STYLE-DEBT：硬编码 hex 改为 CSS token | BUGS.md | 历史遗留 |
-
-### 待验证
-
-- [ ] Vercel 部署后浅色模式线上效果确认
-- [ ] 本地代理稳定性确认（OKX/Binance 数据访问）
-
----
-
-## 三、注意事项及相关规范
-
-### 网络环境
-
-⚠️ **本地网络限制**：用户本地环境（运营商防火墙/内网策略）曾屏蔽 OKX、Binance、GitHub。
-- 当前已启用代理，GitHub 恢复可达
-- OKX/Binance 数据访问需确认代理稳定性
-- 线上版本（Vercel 东京节点 hnd1）数据正常
-
-### 代码验证流程
-
-```bash
-pnpm tsc -p tsconfig.json      # TypeScript 类型检查
-pnpm lint:build                 # ESLint 检查
-pnpm lint:style                 # StyleLint 检查
-pnpm test                       # 单元测试
-pnpm validate                   # 全部验证
-```
-
-### 项目约束
-
-- **仅 PEPE/DOGE + BTC**，无其他币种
-- **无胜率/准确率/假突破概率数值**，无收益承诺
-- **无「买入/开仓/建议」表述**（禁用语扫描）
-- **配色用 token**（`--radar/--pepe/--doge/--btc/--bull/--bear/--warn`）
-- **自绘 SVG**，无新增图表依赖
-- **时间统一 UTC 存储、Asia/Shanghai 展示**
-
-### 技术栈
-
-- Next.js 16 + React 19.2.3 + TypeScript 5
-- Tailwind CSS 4 + shadcn/ui + next-themes
-- pnpm 9.0.0（强制，`preinstall` 脚本锁定）
-- Vercel 部署（东京节点 hnd1）
-
-### 关键文件
-
-| 文件 | 作用 |
-|------|------|
-| `src/app/layout.tsx` | 根布局，ThemeProvider |
-| `src/app/globals.css` | 全局样式，主题变量 |
-| `src/components/layout/SiteHeader.tsx` | 导航栏，主题切换按钮 |
-| `src/lib/action.ts` | Action Card 核心逻辑 |
-| `src/lib/v2/engine.ts` | 六层评分引擎 |
-| `src/lib/state-machine.ts` | 十态状态机 |
-| `docs/qa/BUGS.md` | 缺陷台账 |
-| `docs/qa/QA_CHECKLIST.md` | 回归清单 |
-| `docs/review/CODE_REVIEW.md` | 代码审查报告 |
-
-### 文档现状
-
-- `docs/qa/`：BUGS.md、QA_CHECKLIST.md、ethfi-acceptance/、ethfi-production/
-- `docs/review/`：CODE_REVIEW.md
-- `docs/handoff/`：本文件
-- ⚠️ 缺失：`docs/roles/`、`docs/pm/`（CODE_REVIEW.md 中已标注）
-
----
-
-## 四、提交记录
-
-```
-65ced4d feat: 浅色模式 + 主题切换
-2d37326 docs(radar): README补首页产品截图+生产地址+本次推送变动说明
-ecced00 feat(research): 前向采集器+基线澄清（QA PASS，实时零消费）
-```
-
----
-
-## 五、下一步智能体接续提示词
-
-见下方「一键复制」区域。
+1. AGENTS；2. 角色卡；3. 根 `USER_MODEL_OVERRIDE.md`；4. 本 HANDOFF；5. 根 `经验一句话.md`；6. 任务目标放最后。
+冲突才扩大读。

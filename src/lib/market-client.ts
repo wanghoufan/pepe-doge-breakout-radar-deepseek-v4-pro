@@ -480,6 +480,52 @@ export async function getFunding(coin: FundingCoin, limit = 30): Promise<Result<
   };
 }
 
+export interface OkxSwapInstrument {
+  instId: string;
+  state: string;
+  /** 合约面值（ctVal）/计价币，供核验清单使用；不做自乘换算。 */
+  ctVal: string | null;
+  ctValCcy: string | null;
+  listTime: number | null;
+}
+
+/**
+ * 拉取 OKX 公开永续合约目录（候选池唯一来源，只登记候选，不触发任何实时信号）。
+ * 只保留 -USDT-SWAP 永续；失败返回真实诊断，绝不编造候选。
+ */
+export async function getOkxSwapInstruments(): Promise<Result<OkxSwapInstrument[]>> {
+  const path = '/api/v5/public/instruments?instType=SWAP';
+  const res = await fetchWithFallback(path, OKX_HOSTS, OKX_TIMEOUT_MS, 'instruments:SWAP');
+  if (!res.ok) return res;
+
+  const body = res.data as
+    | { code?: string; msg?: string; data?: { instId: string; state: string; ctVal?: string; ctValCcy?: string; listTime?: string }[] }
+    | null;
+  if (!body || body.code !== '0' || !Array.isArray(body.data)) {
+    return {
+      ok: false,
+      error: 'okx_bad_response',
+      diag: {
+        ...res.diag,
+        vendorCode: body?.code ?? null,
+        vendorMsg: body?.msg ?? '响应体缺少 data',
+        errorKind: 'bad_body',
+        errorDetail: `OKX code=${body?.code ?? 'null'} msg=${body?.msg ?? 'null'}`,
+      },
+    };
+  }
+  const data = body.data
+    .filter((r) => typeof r.instId === 'string' && r.instId.endsWith('-USDT-SWAP'))
+    .map((r) => ({
+      instId: r.instId,
+      state: r.state ?? 'unknown',
+      ctVal: r.ctVal ?? null,
+      ctValCcy: r.ctValCcy ?? null,
+      listTime: r.listTime ? Number(r.listTime) : null,
+    }));
+  return { ok: true, data, diag: res.diag };
+}
+
 export const MARKET_META = {
   OKX_INST,
   BINANCE_SYMBOL,

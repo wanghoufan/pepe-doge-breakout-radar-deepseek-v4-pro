@@ -15,6 +15,9 @@ export function SiteFooter() {
           <p>PEPE·DOGE·ETHFI 突破雷达 · 研究工具</p>
           <p>数据：OKX / Binance（实时，部署后可接入）· 历史快照（本地）</p>
         </div>
+        <p className="mt-2 text-xs text-muted-foreground/70">
+          观察盘配置（档位 / 卡槽 / 收藏）由本地 SQLite 持久化；Vercel 生产环境不保证跨实例或跨部署保存。
+        </p>
       </div>
     </footer>
   );

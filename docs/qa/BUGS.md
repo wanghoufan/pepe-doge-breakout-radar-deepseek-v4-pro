@@ -50,3 +50,22 @@
 - 改名：`Risk→Entry Heat`、`突破位→本轮突破位`、`rolling阻力→当前下一压力`、`失效观察位→结构失效位`、`突破距离→突破当根超越幅度` + 新增「当前距突破位」在 `SignalCard`/`AssetDetail`/`ActionCard` 生效；失效后历史评分灰化 + 「仅用于复盘」标签生效。
 - 回归：6 页 + `/api/history|similarity|market/overview|similarity/current|market/candles|market/funding` 均 200；21 事件 + 21 截图完整；非法输入 `coin=INVALID→invalid_coin`、`history/INVALID→404`、`/asset/btc→404` 正确。
 - 已知限制：本环境无真实浏览器，仅做 SSR HTML + API + 纯函数映射验证，未做 hydrated 像素级验证（`ACTION_CARD_REPORT §9` 同口径）。
+
+---
+
+## QA-2026-09-18｜PRODUCT_PLAN_V0.2 观察盘 MVP（CODE_REVIEW 终核 PASS 后）
+
+- 基线：DEV_BASELINE=PRODUCT_PLAN_V0.2；CODE_REVIEW 终核 PASS（2026-09-18）
+- 单元/类型：`pnpm test` 212/212 通过；`pnpm ts-check` exit 0
+- 接口（dev PORT=5123，`SQLITE_DB_PATH=/tmp/qa-5123.db`，已杀进程、已删临时库，`var/` 无残留）：
+  - `GET /` → 200
+  - `GET /api/config` 默认 `tier:4`（slots 全空、persisted:false）→ 符合“首次默认 4 卡”
+  - `PUT /api/config` tier 6（PEPE/DOGE/ETHFI＋3 空槽）→ ok:true；`GET` 确认持久化 persisted:true
+  - 一币多卡 `PUT slots=[PEPE,PEPE,DOGE,ETHFI]` → 400＋“一币一卡”错误，未污染已存配置
+  - 未启用标的（BTC/SOL/XRP）→ 拒绝写入（ok:false＋逐槽错误）
+  - `GET /api/assets` 200：enabled=[PEPE,DOGE,ETHFI]，reference=[BTC]，candidates 因沙箱无外网 status=unavailable（预期）
+  - 重启后 `GET /api/config` → tier 6 配置仍在（persisted:true）
+- 无胜率表述：`rg 胜率|准确率|开仓 src/` 命中均为合规反向声明（“不输出胜率…”/“不是开仓信号”/禁语表），ActionCard/实时信号/报警无概率化收益表述 → 通过
+- 沙箱记账：`/api/market/overview` status=unavailable（OKX DNS 墙 EHOSTDOWN 169.254.0.2），`/api/market/candles` → 503 真实诊断；属预期，不判缺陷
+- 真机预检：本轮为 API＋SSR 验证，无真机 session，记 NOT_VERIFIED（未做 hydrated 像素级验证）
+- 结论：PASS，新 BUG 0（沿用既有 BUG-001/002/003＋INFO，不新增）

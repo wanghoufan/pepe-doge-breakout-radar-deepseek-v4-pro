@@ -257,7 +257,7 @@ export function formatAgeCn(ms: number): string {
  * 禁止用 openTs 直算：年龄 = now - closeTs（= openTs + 4H）。
  */
 export function candleMainCopy(
-  coin: 'PEPE' | 'DOGE' | 'BTC' | 'ETHFI',
+  coin: string,
   actualLastConfirmedOpenTs: number | null,
   now: number,
   status: CandleFreshnessStatus,
@@ -272,7 +272,7 @@ export function candleMainCopy(
  * 注意与 K 线行解耦：现价新鲜度走 ticker 时间戳，不吃 K 线收盘口径。
  */
 export function priceMainCopy(
-  coin: 'PEPE' | 'DOGE' | 'BTC' | 'ETHFI',
+  coin: string,
   priceTs: number | null,
   now: number,
   status: FeedStatus,

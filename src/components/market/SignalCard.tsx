@@ -84,6 +84,12 @@ export function SignalCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* 研究隔离：无独立历史基线标的的研究指标一律未知/缺失，禁借用其他标的统计 */}
+        {!meta.hasHistoryBaseline && (
+          <div className="rounded-md border border-border/60 bg-muted/40 px-3 py-1.5 text-[11px] leading-relaxed text-muted-foreground">
+            无独立历史研究基线：该标的 Precision / Recall / FPR / Success Rate 与 MFE / MAE 一律「未知/缺失」，不借用其他标的统计（统一观察规则，待验证）。
+          </div>
+        )}
         {/* Level 1–3：当前行动（永远排在最前） */}
         <ActionCard action={action} />
         {!signal && loading && (

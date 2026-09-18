@@ -97,7 +97,7 @@ export function CandleFreshnessBlock({
   actualOpenTs,
   now,
 }: {
-  coin: 'PEPE' | 'DOGE' | 'BTC' | 'ETHFI';
+  coin: string;
   priceTs: number | null;
   /** 最近已收盘 K 线 openTs（open 语义；缺失/非法传 null → UNAVAILABLE）。 */
   actualOpenTs: number | null;
@@ -141,9 +141,9 @@ export function SourceFreshnessRow({
   fundingTs,
 }: {
   generatedAt: number;
-  lastConfirmedTs: { PEPE: number | null; DOGE: number | null; BTC: number | null; ETHFI?: number | null } | null;
-  prices: Record<'PEPE' | 'DOGE' | 'BTC' | 'ETHFI', { last: number; ts: number } | null> | Record<'PEPE' | 'DOGE' | 'BTC', { last: number; ts: number } | null> | null;
-  fundingTs: Record<'PEPE' | 'DOGE', number | null> | Record<'PEPE' | 'DOGE' | 'ETHFI', number | null> | null;
+  lastConfirmedTs: Record<string, number | null> | null;
+  prices: Record<string, { last: number; ts: number } | null> | null;
+  fundingTs: Record<string, number | null> | null;
 }) {
   const now = generatedAt;
   // Phase A：K 线走期望收盘 Bar 对比（open 语义输入，close 口径展示）；

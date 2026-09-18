@@ -54,6 +54,12 @@ export async function GET() {
     },
     data: {
       btc: overview.btc,
+      // 以标的 ID 为键的动态映射（观察盘消费；legacy pepe/doge/ethfi 字段保留兼容）。
+      signals: {
+        PEPE: overview.pepe,
+        DOGE: overview.doge,
+        ETHFI: overview.ethfi,
+      },
       pepe: overview.pepe,
       doge: overview.doge,
       ethfi: overview.ethfi,

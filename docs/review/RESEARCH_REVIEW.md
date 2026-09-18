@@ -1,0 +1,46 @@
+# RESEARCH_REVIEW（Phase1 专用；内部 role ID `product-reviewer` 不变）
+
+- Plan Version（评的是哪版 PRODUCT_PLAN）：PRODUCT_PLAN_V0.2
+- Review Round（第几轮）：第 2 轮
+- Result：PASS；两项 Required Fixes、五项人类决策、门槛与评分均已核定，可进入 Human Gate。
+- P0 / P1 / P2：
+  - P0：0。12:55 人类回执已覆盖本轮五项产品决策，且 V0.2 已逐项落字。
+  - P1：blocking 0。逐币核验清单、9 卡性能/限频实测、SQLite 具体 Migration/备份恢复实施及 Vercel 持久化选型均为执行期非 blocking 项；其中逐币核验是 `enabled` 与开发验收的硬前置条件，不可降格为候选注册即可展示。
+  - P2：Vercel/云端持久化、账号与多租户、跨设备同步、自动目录刷新、自由拖拽、多看板、分享模板、更多交易所与移动端布局。
+- Key Assumptions（逐条列＋是否成立）：
+  - 固定 4/6/9 档位、档位即布局、首次默认 4 卡：成立；与 HANDOFF 12:55 回执一致。
+  - 搜索加收藏、一币一卡且不重复：成立；与回执一致，且 V0.2 写明空槽而非重复补位。
+  - 单用户、低写入、单实例本地运行适用 SQLite：合理成立；与 `docs/sop/sqlite.md` 的适用范围一致，超出该边界时 V0.2 要求重新评估。
+  - 新标的统一规则不等于研究有效性：成立；计划保留“待验证/未知或缺失”边界，未将其包装为概率或收益结论。
+  - 每个候选均可启用：不作为假设。V0.2 将其拆为逐币官方字段与应用真实请求的必过门，任一失败或证据过期即不得 `enabled`、不得出现在选择器、卡片或开发验收样本中。
+- Verified Facts（已验证事实＋证据）：
+  - Required Fix 1 已闭环：HANDOFF 2026-09-18 12:55 回执明确 OKX 公开可拉取永续为候选全量范围、启用前逐币核验、BTC 仅作环境参照；V0.2 的 Problem、Functional Scope、DoD 与 P0 将其明确为 CHANGE C 已成立，未把 BTC 变成信号卡。
+  - 五项人类决策均已一致落字：①候选范围与 BTC 边界；②4/6/9 档位（首次默认 4）；③名称/代码搜索加收藏；④一币一卡、不允许重复；⑤档位即布局、配置保存到服务端本地 SQLite。V0.2 的 User Flow、Functional Scope、DoD 与 HANDOFF 12:55 回执逐项一致；回执中“档位即布局”与“SQLite”虽分列记录，仍分别归入第⑤项的布局定义与存储决定，未产生范围冲突。
+  - Required Fix 2 已闭环：V0.2 Data / API 列出 instrument ID/永续类型、状态、4H K 线与历史长度、成交量、资金费率、精度、时间/收盘语义、限频及应用真实请求结果；任一失败或过期均禁止 `enabled`。状态门同时限制选择器、卡片与开发验收样本，候选注册、验证、启用三层未混淆。
+  - SQLite 抽查通过：V0.2 固定 `project_slug` 与一项目一主库，分离开发/正式库，使用环境变量和集中 Repository/API，要求 Migration、Git 排除、事务、`foreign_keys`/WAL/`busy_timeout` 评估、部署前备份及隔离恢复；与 `docs/sop/sqlite.md` §§3–12、16–17 一致。未越权将 SQLite 选型扩展为 Vercel 持久化承诺。
+- External Sources（Web Search / Web Fetch / 官方文档 / 官方 GitHub / 第三方 / 社区反馈，附链接）：
+  - [OKX API v5 官方文档](https://www.okx.com/docs-v5/en/)：`SWAP` 为永续合约类型；公开 instruments 接口可作候选目录；K 线接口支持 `4H`、提供成交量与收盘确认字段，并列出速率限制；公开 funding-rate 接口适用于永续合约。该事实支持“逐币核验字段可被逐项验证”，不替代任何单一标的的真实请求证据。
+- Competitor Findings（竞品现状＋对本 Plan 的启示）：
+  - 本轮无需新增竞品结论。计划只采用搜索、收藏、选择与布局的通用交互，不复制下单、订单簿或收益导向模块。
+- Counter-evidence（反对证据＋成功的相反做法）：
+  - 反对把 OKX 目录存在等同于标的可启用：合约状态、历史长度、资金费率、精度、限频与应用端实际响应都可能逐币不同。V0.2 的 `candidate → verified → enabled → disabled` 门禁止该跳跃。
+  - 成功的相反做法：先完成每币证据清单与真实请求，再显式启用；未通过者保留候选或停用，并让布局安全降级。该做法已成为 DoD 与测试目标。
+- Unverified Items（未验证项＋验证方法）：
+  - 各候选的实际 OKX 字段与应用端请求：执行期逐币记录官方响应、时间戳和限频结果；仅全部必需项通过且证据未过期才改为 `enabled`。
+  - 9 卡性能、限频、SQLite Migration/备份/恢复与容器重建持久化：按 DoD 实测，并由 Phase2 review/QA/supervisor 链验收。它们不构成进入 Human Gate 的 blocking P1。
+- Required Fixes（Planner 必须改项，打回依据）：
+  - 第 1 项：已闭环。CHANGE C 与范围边界已有 12:55 人类回执，V0.2 已一致落盘。
+  - 第 2 项：已闭环。逐币核验被定义为 `enabled` 和开发验收的硬门；本阶段不伪造逐币结果，也不允许未核验候选进入用户可见范围。
+- Plan Readiness Score（分项打分＋合计，口径以 PRODUCT_PLAN.template.md 为准）：
+  - 产品目标与用户需求（20）：20/20
+  - 核心方案完整性（20）：19/20
+  - 外部事实与竞品验证（20）：16/20
+  - 技术可行性（15）：14/15
+  - 风险与异常场景（10）：10/10
+  - 开发范围与 DoD（10）：10/10
+  - 未决问题（5）：5/5
+  - 合计：94/100。算术核验：20 + 19 + 16 + 14 + 10 + 10 + 5 = 94。
+  - Gate 核定：满足。94 >= 90；P0 = 0；blocking P1 = 0；关键事实（现状约束、人类范围回执、OKX 可核验接口字段、SQLite 适用/边界）已有证据；核心假设均已被人类决策确认或被逐币硬门约束，未把未验证事实当前置承诺。
+- Human-only Decisions（只需人类拍板项）：
+  - 无。本 MVP 的五项决策已有 12:55 回执；Vercel 生产持久化明确后置，届时另走独立 Human Decision / Change Request。
+- Next Action：进 `WAITING_HUMAN_APPROVAL`，由 Task Manager 发起一次 Human Gate；未收到用户明确“第二阶段，开发”前不得启动开发。

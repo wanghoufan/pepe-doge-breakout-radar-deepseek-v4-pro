@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LiveRadar } from '@/components/market/LiveRadar';
+import { WatchBoard } from '@/components/market/WatchBoard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getHistoricalEvents } from '@/lib/data-store';
 import { CAMPAIGNS } from '@/lib/event-analysis';
@@ -19,12 +19,12 @@ export default function HomePage() {
         <div className="relative">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-radar">Breakout Radar · Research Tool</p>
           <h1 className="mt-3 max-w-2xl text-2xl font-semibold leading-tight sm:text-3xl">
-            PEPE·DOGE·ETHFI 突破雷达
+            PEPE·DOGE·ETHFI 多标的突破观察盘
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            把当前 PEPE / DOGE / ETHFI 的量价、波动与资金费率状态，与 21 个历史上涨行情样本做对照，
+            把当前已启用标的的量价、波动与资金费率状态，与 21 个历史上涨行情样本做对照，
             用「此刻更像哪一段历史」来组织证据——而不是给出买卖信号。
-            ETHFI 暂无历史基线样本（实时信号与历史对照仅覆盖 PEPE/DOGE）。
+            观察盘支持 4 / 6 / 9 档位、名称/代码搜索与收藏；ETHFI 暂无历史基线样本（研究指标一律未知/缺失）。
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
@@ -43,8 +43,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 实时雷达 */}
-      <LiveRadar />
+      {/* 多标的观察盘 */}
+      <WatchBoard />
 
       {/* 历史证据概览 */}
       <section className="space-y-4">

@@ -164,3 +164,13 @@ Desktop.ini
 # Misc
 .coze-logs
 .codegraph/
+
+# SQLite（真实数据库不进 Git；结构 Migration 进 Git，见 docs/sop/sqlite.md）
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+/var/
+/DockerData/
+/DockerBackups/
