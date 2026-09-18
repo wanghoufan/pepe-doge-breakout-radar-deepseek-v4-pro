@@ -1,11 +1,20 @@
 import type { Metadata } from 'next';
 import { HistoryGrid } from '@/components/market/HistoryGrid';
 import { getHistoricalEvents } from '@/lib/data-store';
+import { getEnabledAssets } from '@/lib/registry';
+import { getServerRegistry } from '@/lib/server/registry-service';
 
 export const metadata: Metadata = { title: '历史样本' };
 
+export const dynamic = 'force-dynamic';
+
 export default function HistoryPage() {
   const events = getHistoricalEvents();
+  const coins = getEnabledAssets(getServerRegistry()).map((a) => ({
+    id: a.id,
+    symbol: a.symbol,
+    hasBaseline: a.hasHistoryBaseline && events.some((e) => e.coin === a.id),
+  }));
   return (
     <div className="space-y-6">
       <header className="space-y-2">
@@ -15,7 +24,7 @@ export default function HistoryPage() {
           突破量比、资金费率与 BTC 环境等可复核指标。点击卡片查看完整证据与原始截图。
         </p>
       </header>
-      <HistoryGrid events={events} />
+      <HistoryGrid events={events} coins={coins} />
     </div>
   );
 }

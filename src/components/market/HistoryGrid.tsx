@@ -9,11 +9,19 @@ import { ASSETS } from '@/lib/config';
 import { formatDate, formatPct } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
-type CoinFilter = 'ALL' | 'PEPE' | 'DOGE';
+/** 币筛选选项（来自服务端已启用注册表；hasBaseline=false 走空缺态，不计入统计分母）。 */
+export interface CoinFilterOption {
+  id: string;
+  symbol: string;
+  hasBaseline: boolean;
+}
 
-export function HistoryGrid({ events }: { events: HistoricalEvent[] }) {
-  const [coin, setCoin] = useState<CoinFilter>('ALL');
+export function HistoryGrid({ events, coins }: { events: HistoricalEvent[]; coins: CoinFilterOption[] }) {
+  const [coin, setCoin] = useState<string>('ALL');
   const [query, setQuery] = useState('');
+
+  const activeCoin = coin === 'ALL' ? null : coins.find((c) => c.id === coin) ?? null;
+  const emptyBaseline = !!activeCoin && !activeCoin.hasBaseline;
 
   const filtered = useMemo(() => {
     let list = events.slice();
@@ -34,18 +42,19 @@ export function HistoryGrid({ events }: { events: HistoricalEvent[] }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1 rounded-lg border border-border p-1">
-          {(['ALL', 'PEPE', 'DOGE'] as CoinFilter[]).map((c) => (
+        <div className="flex flex-wrap gap-1 rounded-lg border border-border p-1">
+          {[{ id: 'ALL', symbol: '全部', hasBaseline: true }, ...coins].map((c) => (
             <button
-              key={c}
+              key={c.id}
               type="button"
-              onClick={() => setCoin(c)}
+              onClick={() => setCoin(c.id)}
               className={cn(
                 'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-                coin === c ? 'bg-radar/15 text-radar' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                coin === c.id ? 'bg-radar/15 text-radar' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
               )}
             >
-              {c === 'ALL' ? '全部' : c}
+              {c.symbol}
+              {!c.hasBaseline ? <span className="ml-1 text-[10px] text-muted-foreground/70">空缺</span> : null}
             </button>
           ))}
         </div>
@@ -57,8 +66,16 @@ export function HistoryGrid({ events }: { events: HistoricalEvent[] }) {
         />
       </div>
 
-      <div className="text-xs text-muted-foreground">共 {filtered.length} 个样本</div>
+      {emptyBaseline ? (
+        <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+          {activeCoin!.symbol} 暂无历史基线样本（现有基线为 PEPE 11 + DOGE 10），空缺不计入统计分母，
+          相似性与研究指标一律「未知/缺失」，禁编造。
+        </div>
+      ) : (
+        <div className="text-xs text-muted-foreground">共 {filtered.length} 个样本</div>
+      )}
 
+      {!emptyBaseline && (
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((e) => {
           const meta = ASSETS[e.coin];
@@ -93,8 +110,11 @@ export function HistoryGrid({ events }: { events: HistoricalEvent[] }) {
           );
         })}
       </div>
+      )}
 
-      {filtered.length === 0 && <div className="py-12 text-center text-sm text-muted-foreground">无匹配样本</div>}
+      {!emptyBaseline && filtered.length === 0 && (
+        <div className="py-12 text-center text-sm text-muted-foreground">无匹配样本</div>
+      )}
     </div>
   );
 }

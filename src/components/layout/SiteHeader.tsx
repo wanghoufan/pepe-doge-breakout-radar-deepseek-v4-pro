@@ -9,9 +9,6 @@ import { cn } from '@/lib/utils';
 
 const NAV = [
   { href: '/', label: '总览' },
-  { href: '/asset/PEPE', label: 'PEPE' },
-  { href: '/asset/DOGE', label: 'DOGE' },
-  { href: '/asset/ETHFI', label: 'ETHFI' },
   { href: '/history', label: '历史样本' },
   { href: '/similarity', label: '相似性' },
   { href: '/methodology', label: '方法论' },

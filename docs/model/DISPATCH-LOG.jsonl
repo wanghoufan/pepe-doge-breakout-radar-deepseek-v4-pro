@@ -14,3 +14,15 @@
 {"date":"2026-09-18","task":"DEV-代理分支","role":"builder","model":"opencode-go/deepseek-v4.1-flash","used":"主","runtime":"opencode","result":"PASS","note":"market-client代理plumbing＋4测试，234/234"}
 {"date":"2026-09-18","task":"DEV-代理分支","role":"code-reviewer","model":"opencode/muse-spark-1.3-contributor-free","used":"主","runtime":"本窗口","result":"PASS","note":"复核PASS"}
 {"date":"2026-09-18","task":"DEV-代理分支","role":"qa","model":"codex/gpt-5.6-luna","used":"主","runtime":"本窗口","result":"PASS","note":"assets live 466＋overview live，0新BUG"}
+{"date":"2026-09-18","task":"DEV-JIT详情","role":"builder","model":"opencode-go/deepseek-v4.1-flash","used":"主","runtime":"opencode","result":"PASS","note":"详情JIT＋服务端初值，230/230"}
+{"date":"2026-09-18","task":"DEV-推送MVP","role":"builder","model":"opencode-go/deepseek-v4.1-flash","used":"主","runtime":"opencode","result":"PASS","note":"Web推送MVP，241/241"}
+{"date":"2026-09-18","task":"DEV-紧凑排布","role":"builder","model":"opencode-go/deepseek-v4.1-flash","used":"主","runtime":"opencode","result":"PASS","note":"删卡自动顶位，245/245"}
+{"date":"2026-09-18","task":"DEV-导航枢纽","role":"builder","model":"opencode-go/deepseek-v4.1-flash","used":"主","runtime":"opencode","result":"PASS","note":"去三币Tab＋币筛选，245/245"}
+{"date":"2026-09-18","task":"DEV-JIT详情","role":"code-reviewer","model":"opencode/muse-spark-1.3-contributor-free","used":"主","runtime":"本窗口","result":"PASS","note":"复核PASS"}
+{"date":"2026-09-18","task":"DEV-推送MVP","role":"code-reviewer","model":"opencode/muse-spark-1.3-contributor-free","used":"主","runtime":"本窗口","result":"PASS","note":"复核PASS"}
+{"date":"2026-09-18","task":"DEV-紧凑排布","role":"code-reviewer","model":"opencode/muse-spark-1.3-contributor-free","used":"主","runtime":"本窗口","result":"PASS","note":"CONDITIONAL无blocking"}
+{"date":"2026-09-18","task":"DEV-导航枢纽","role":"code-reviewer","model":"opencode/muse-spark-1.3-contributor-free","used":"主","runtime":"本窗口","result":"PASS","note":"复核PASS"}
+{"date":"2026-09-18","task":"DEV-JIT详情","role":"qa","model":"codex/gpt-5.6-luna","used":"主","runtime":"本窗口","result":"PASS","note":"0新BUG"}
+{"date":"2026-09-18","task":"DEV-推送MVP","role":"qa","model":"codex/gpt-5.6-luna","used":"主","runtime":"本窗口","result":"PASS","note":"待实测链路"}
+{"date":"2026-09-18","task":"DEV-紧凑排布","role":"qa","model":"codex/gpt-5.6-luna","used":"主","runtime":"本窗口","result":"PASS","note":"docker真机PASS"}
+{"date":"2026-09-18","task":"DEV-导航枢纽","role":"qa","model":"codex/gpt-5.6-luna","used":"主","runtime":"本窗口","result":"PASS","note":"0新BUG"}

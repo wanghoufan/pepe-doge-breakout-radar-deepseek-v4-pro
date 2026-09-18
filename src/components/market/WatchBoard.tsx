@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useApi } from '@/hooks/use-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -383,6 +384,9 @@ export function WatchBoard() {
                   <span>卡槽 {i + 1}</span>
                   {asset ? (
                     <div className="flex items-center gap-2">
+                      <Link href={`/asset/${asset.id}`} className="hover:text-foreground">
+                        详情
+                      </Link>
                       <button type="button" className="hover:text-foreground" onClick={() => setActiveSlot(i)}>
                         更换
                       </button>

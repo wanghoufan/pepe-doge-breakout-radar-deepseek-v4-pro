@@ -135,3 +135,13 @@
 - 整套框架同口径：行动卡（突破跟踪＋价格/突破位/失效位/为什么/接下来观察）、BTC 环境、分层评分、K 线图、资金费率、信号判断依据、无基线未知/缺失、历史形态(0)
 - JS 报错 0；截图 qabrowser/qa-hype-detail2.png（工作区外）
 - 结论：PASS
+
+## QA-2026-09-18-第五轮｜导航去三币Tab＋详情动态化回归（CODE_REVIEW 导航专项 PASS 后）
+
+- 基线：DEV_BASELINE=PRODUCT_PLAN_V0.2；CODE_REVIEW 导航专项 PASS（2026-09-18，P0/P1 0，Quant 零改动）
+- 单元/类型：`pnpm test` 245/245 通过；`npx tsc --noEmit` exit 0
+- 页面（PORT=5123 自起 dev，同工作树代码）：`/` → 200；`/history` → 200；`/similarity` → 200；`/asset/pepe` → 200；`/asset/hype` → 200；`/asset/zzznotexist` → 404
+- 无胜率表述：命中仅合规声明（methodology“不输出胜率…/不包装成胜率”、AssetPicker 注释禁令），无概率化收益表述 → 通过
+- 临时文件：自起 5123 进程已杀；`var/*.db*` 已清
+- 真机预检：SSR＋curl＋grep 验证，无真机 session，记 NOT_VERIFIED
+- 结论：PASS，新 BUG 0（沿用既有 BUG-001/002/003＋INFO，不新增）

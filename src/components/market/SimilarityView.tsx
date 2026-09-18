@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useApi, type ApiState } from '@/hooks/use-api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,22 +38,42 @@ interface CurrentResp {
   data: { query: { label: string; value: number | null }[]; ranking: Neighbor[] } | null;
 }
 
-export function SimilarityView() {
+/** 币筛选选项（来自服务端已启用注册表；hasBaseline=false 走空缺态，不计入统计分母）。 */
+export interface CoinFilterOption {
+  id: string;
+  symbol: string;
+  hasBaseline: boolean;
+}
+
+export function SimilarityView({ coins = [] }: { coins?: CoinFilterOption[] }) {
   const sim = useApi<SimilarityResp>('/api/similarity');
   const pepeCur = useApi<CurrentResp>('/api/similarity/current?coin=PEPE');
   const dogeCur = useApi<CurrentResp>('/api/similarity/current?coin=DOGE');
   const [anchor, setAnchor] = useState<string | null>(null);
+  const [coin, setCoin] = useState<string>('ALL');
 
   const events = sim.data?.data.events ?? [];
   const matrix = sim.data?.data.matrix ?? [];
   const scatter = sim.data?.data.scatter ?? [];
   const features = sim.data?.data.features ?? [];
 
+  const activeCoin = coin === 'ALL' ? null : coins.find((c) => c.id === coin) ?? null;
+  const emptyBaseline = !!activeCoin && !activeCoin.hasBaseline;
+
   const byId = useMemo(() => {
     const m = new Map<string, SimEventSummary>();
     events.forEach((e) => m.set(e.id, e));
     return m;
   }, [events]);
+
+  // 21 个事件量级极小，直接派生即可（无需 useMemo）。
+  const visibleEvents = coin === 'ALL' ? events : events.filter((e) => e.coin === coin);
+  const visibleScatter = coin === 'ALL' ? scatter : scatter.filter((p) => byId.get(p.id)?.coin === coin);
+
+  // 切币后原锚点可能已被过滤，清空避免出现空邻居。
+  useEffect(() => {
+    setAnchor(null);
+  }, [coin]);
 
   const neighbors = useMemo(() => {
     if (!anchor) return [];
@@ -70,46 +90,76 @@ export function SimilarityView() {
         </p>
       </header>
 
-      {/* 特征定义 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">对比特征（启动前，可比较，不事后改写）</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          {features.map((f) => (
-            <Badge key={f.key} variant="outline" className="text-xs font-normal">
-              {f.label}
-              <span className="ml-1 text-muted-foreground">{f.lowerBetter ? '↓ 越小越收缩' : ''}</span>
-            </Badge>
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* 当前像谁 */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <CurrentPanel coin="PEPE" resp={pepeCur} byId={byId} />
-        <CurrentPanel coin="DOGE" resp={dogeCur} byId={byId} />
+      {/* 币筛选（无基线币走空缺态，不计入统计分母） */}
+      <div className="flex flex-wrap gap-1 rounded-lg border border-border p-1">
+        {[{ id: 'ALL', symbol: '全部', hasBaseline: true }, ...coins].map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => setCoin(c.id)}
+            className={cn(
+              'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+              coin === c.id ? 'bg-radar/15 text-radar' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+            )}
+          >
+            {c.symbol}
+            {!c.hasBaseline ? <span className="ml-1 text-[10px] text-muted-foreground/70">空缺</span> : null}
+          </button>
+        ))}
       </div>
 
-      {/* 散点投影 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">
-            事件近似分布（PCA 二维投影，仅可视化，不构成统计结论）
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScatterPlot points={scatter} byId={byId} onSelect={setAnchor} selected={anchor} />
-        </CardContent>
-      </Card>
+      {emptyBaseline ? (
+        <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+          {activeCoin!.symbol} 暂无历史基线样本（现有基线为 PEPE 11 + DOGE 10），空缺不计入统计分母，
+          相似性与研究指标一律「未知/缺失」，禁编造。
+        </div>
+      ) : (
+        <>
+          {/* 特征定义 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">对比特征（启动前，可比较，不事后改写）</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
+              {features.map((f) => (
+                <Badge key={f.key} variant="outline" className="text-xs font-normal">
+                  {f.label}
+                  <span className="ml-1 text-muted-foreground">{f.lowerBetter ? '↓ 越小越收缩' : ''}</span>
+                </Badge>
+              ))}
+            </CardContent>
+          </Card>
 
-      {/* 锚点邻居 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">
-            相似邻居{anchor ? `（以 ${anchor} 为锚点，Top ${neighbors.length}）` : ''}
-          </CardTitle>
-        </CardHeader>
+          {/* 当前像谁（仅有历史基线的 PEPE / DOGE） */}
+          {coin === 'ALL' || coin === 'PEPE' || coin === 'DOGE' ? (
+            <div className={cn('grid gap-4', coin === 'ALL' ? 'lg:grid-cols-2' : '')}>
+              {coin !== 'DOGE' && <CurrentPanel coin="PEPE" resp={pepeCur} byId={byId} />}
+              {coin !== 'PEPE' && <CurrentPanel coin="DOGE" resp={dogeCur} byId={byId} />}
+            </div>
+          ) : null}
+
+          {/* 散点投影 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">
+                事件近似分布（PCA 二维投影，仅可视化，不构成统计结论）
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  {coin === 'ALL' ? `全部 ${visibleEvents.length} 个基线事件` : `${activeCoin!.symbol} ${visibleEvents.length} 个基线事件`}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScatterPlot points={visibleScatter} byId={byId} onSelect={setAnchor} selected={anchor} />
+            </CardContent>
+          </Card>
+
+          {/* 锚点邻居 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">
+                相似邻居{anchor ? `（以 ${anchor} 为锚点，Top ${neighbors.length}）` : ''}
+              </CardTitle>
+            </CardHeader>
         <CardContent>
           {!anchor ? (
             <p className="py-6 text-center text-sm text-muted-foreground">点击上方散点图中的一个事件作为锚点</p>
@@ -136,6 +186,8 @@ export function SimilarityView() {
           )}
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   );
 }

@@ -175,3 +175,16 @@
 - P3：任务称layout.test.ts 17项，实测 `node --import tsx --test src/lib/layout.test.ts` 为14/14 PASS；数量口径对不上，建议核对是否漏算/指全仓数。
 - 通过项：删卡相对顺序不变（PEPE,DOGE,ETHFI删中卡→DOGE,ETHFI；删尾卡位置不变）；一币一卡不破（normalize去重保留首个＋紧凑、assignSlot拒他槽重复、validate一币一卡报错口径不变）；持久化语义不变（schemaVersion/tier/slots长度/favorites口径未动，validate对紧凑布局ok，notice计数仅从位置口径改为集合口径、dropped语义基本等价）；Quant红线零改动（diff仅布局/展示层）。
 - 验证：layout.test.ts 14/14 PASS。
+
+## 导航去三币Tab＋详情动态化专项复审（2026-09-18）
+- 范围：`git diff HEAD` 7文件（SiteHeader/WatchBoard/asset/[coin]/page/history/page/similarity/page/HistoryGrid/SimilarityView）；工作区未提交。
+- Result: PASS（问题数：P0×0 / P1×0 / P2×2 / P3×0；Quant红线零改动）
+- 通过项：
+  - 旧硬编码清干净：SiteHeader 删 PEPE/DOGE/ETHFI 三 Tab（NAV 仅总览/历史/相似性/方法论）；全仓 grep `/asset/PEPE|/asset/DOGE|/asset/ETHFI` 零残留（大写路径）；小写动态 `/asset/${asset.id}`（WatchBoard详情入口）＋ generateStaticParams 小写三币属正常动态路由。
+  - 无基线不混分母：HistoryGrid/SimilarityView 均 `hasBaseline=false → emptyBaseline` 短路渲染空缺态，不渲染计数/网格/散点/邻居；筛选后计数 `filtered.length`/`visibleEvents.length` 仅基线事件派生；空缺文案"暂无历史基线样本（现有基线为 PEPE 11 + DOGE 10），空缺不计入统计分母，相似性与研究指标一律「未知/缺失」，禁编造"——无编造、无概率化收益表述。
+  - 无胜率表述：diff 内无胜率/准确率/Precision/Recall/FPR/Success 数值输出；全仓 grep 命中均为既有合规项（禁语表/方法论/测试断言/SignalCard-AssetDetail"未知/缺失"反向声明）。
+  - 面包屑守卫正确：asset 页 `hasBaseline` 才挂"全部历史样本"链；形态相似性链常挂（相似页自身对无基线币走空缺态，自洽）；返回观察盘常挂。
+  - Quant红线零改动：diff 仅导航/筛选/空缺态展示层，未碰 indicators/config阈值权重/state-machine/v2/engine。
+- P2-1：SimilarityView"当前像谁"硬编码 PEPE/DOGE（pepeCur/dogeCur 双 useApi＋`coin==='PEPE'/'DOGE'` 条件渲染）。当前基线恰为 PEPE 11+DOGE 10所以自洽；未来若有第3个有基线币，其 current 相似性无入口。后续动态化时按 coins（hasBaseline）逐币拉取。
+- P2-2：HistoryGrid `ASSETS[e.coin]` 无 fallback、SimilarityView 三处 `ASSETS[... as 'PEPE'|'DOGE'|'ETHFI']` 强断言。当前事件仅 PEPE/DOGE所以无事；未来新基线币事件进入即 TS/运行时双风险。建议统一 `??` fallback 或随注册表动态化。
+- 验证：`pnpm test` 245/245 PASS。

@@ -58,6 +58,23 @@ export default async function AssetPage({ params }: { params: Promise<{ coin: st
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6">
+      <nav className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground">
+        <Link
+          href="/"
+          className="rounded-md border border-border px-2.5 py-1 transition-colors hover:bg-accent hover:text-foreground"
+        >
+          ← 返回观察盘
+        </Link>
+        <Link href="/similarity" className="hover:text-foreground">
+          形态相似性
+        </Link>
+        {hasBaseline && (
+          <Link href="/history" className="hover:text-foreground">
+            全部历史样本
+          </Link>
+        )}
+      </nav>
+
       <AssetDetail coin={asset.id} meta={meta} initial={initial} />
 
       <section>
