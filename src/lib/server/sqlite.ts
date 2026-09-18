@@ -23,6 +23,9 @@ export const PROJECT_SLUG = 'pepe-doge-breakout-radar';
 export function getDbPath(): string {
   const fromEnv = process.env.SQLITE_DB_PATH;
   if (fromEnv && fromEnv.trim()) return resolve(fromEnv.trim());
+  // Vercel serverless 文件系统只读（仅 /tmp 可写）：落 /tmp，实例内有效，
+  // 跨实例/跨部署不保证（DoD 已声明，UI 与页脚同步告知用户）。
+  if (process.env.VERCEL) return join('/tmp', `${PROJECT_SLUG}.db`);
   return join(process.cwd(), 'var', 'dev.db');
 }
 
@@ -85,6 +88,18 @@ let singleton: DatabaseSync | null = null;
 export function getDb(): DatabaseSync {
   if (!singleton) singleton = openDatabaseAt(getDbPath());
   return singleton;
+}
+
+/**
+ * 可失败打开：文件系统只读/不可写时返回 null，由调用方降级默认配置
+ * （页面不 500）。抛错只用于 Migration 失败等数据安全场景。
+ */
+export function tryOpenDb(): DatabaseSync | null {
+  try {
+    return getDb();
+  } catch {
+    return null;
+  }
 }
 
 /** 仅测试：关闭单例，避免跨用例串库。 */

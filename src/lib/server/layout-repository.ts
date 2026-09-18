@@ -9,7 +9,7 @@
  * 可注入 db（测试用隔离临时库）；默认走进程单例 getDb()。
  */
 import type { DatabaseSync } from 'node:sqlite';
-import { getDb } from './sqlite';
+import { tryOpenDb } from './sqlite';
 import {
   defaultLayout,
   normalizeLayout,
@@ -35,11 +35,18 @@ interface LayoutRow {
   updated_at: number;
 }
 
-/** 读取配置：无记录用默认；损坏 / 过期 / 非法项安全迁移并可回退。 */
+/** 读取配置：无记录用默认；损坏 / 过期 / 非法项安全迁移并可回退。db 传 null（持久化不可用）直接回默认，不抛错。 */
 export function readLayout(
-  db: DatabaseSync = getDb(),
+  db: DatabaseSync | null = tryOpenDb(),
   registry: RegistryAsset[] = getEnabledAssets(),
 ): LayoutLoadResult {
+  if (!db) {
+    return {
+      layout: defaultLayout(),
+      notice: '配置持久化当前不可用（只读文件系统），已用默认 4 卡；Vercel 生产环境不保证跨部署保存',
+      persisted: false,
+    };
+  }
   let row: LayoutRow | undefined;
   try {
     row = db
@@ -92,12 +99,15 @@ export interface WriteResult {
   layout: WatchLayout;
 }
 
-/** 校验后事务写入（原子；非法输入不落盘）。 */
+/** 校验后事务写入（原子；非法输入不落盘）。db 为 null 时诚实失败，不抛 500。 */
 export function writeLayout(
   input: unknown,
-  db: DatabaseSync = getDb(),
+  db: DatabaseSync | null = tryOpenDb(),
   registry: RegistryAsset[] = getEnabledAssets(),
 ): WriteResult {
+  if (!db) {
+    return { ok: false, errors: ['配置持久化当前不可用（只读文件系统），本次修改未保存'], layout: defaultLayout() };
+  }
   const validation = validateLayoutInput(input, registry);
   if (!validation.ok) {
     return { ok: false, errors: validation.errors, layout: readLayout(db, registry).layout };
@@ -130,11 +140,12 @@ export function writeLayout(
   return { ok: true, errors: [], layout };
 }
 
-/** 清除配置（恢复默认 4 卡）。 */
+/** 清除配置（恢复默认 4 卡）。db 为 null 时直接回默认。 */
 export function resetLayout(
-  db: DatabaseSync = getDb(),
+  db: DatabaseSync | null = tryOpenDb(),
   registry: RegistryAsset[] = getEnabledAssets(),
 ): WatchLayout {
+  if (!db) return defaultLayout();
   db.exec('BEGIN');
   try {
     db.prepare('DELETE FROM watch_layout WHERE id = 1').run();
