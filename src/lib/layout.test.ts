@@ -39,15 +39,47 @@ test('确定性补位：收藏优先、注册表顺序次之，不足则空槽',
   assert.equal(new Set(used).size, used.length);
 });
 
-test('一币一卡：normalize 丢弃重复占用，保留首个', () => {
+test('一币一卡：normalize 丢弃重复占用，保留首个并紧凑到前', () => {
   const layout = normalizeLayout({ tier: 4, slots: ['PEPE', 'PEPE', 'DOGE', null], favorites: [] }, REG);
-  assert.deepEqual(layout.slots, ['PEPE', null, 'DOGE', null]);
+  assert.deepEqual(layout.slots, ['PEPE', 'DOGE', null, null]);
 });
 
-test('未启用/未知标的从卡槽清除（安全降级）', () => {
+test('未启用/未知标的从卡槽清除（安全降级，剩余项前移紧凑）', () => {
   const layout = normalizeLayout({ tier: 4, slots: ['PEPE', 'FAKECOIN', 'BTC', 'DOGE'], favorites: ['FAKECOIN'] }, REG);
-  assert.deepEqual(layout.slots, ['PEPE', null, null, 'DOGE']);
+  assert.deepEqual(layout.slots, ['PEPE', 'DOGE', null, null]);
   assert.deepEqual(layout.favorites, []);
+});
+
+test('紧凑化：中间空槽被后续卡前移填满，仅末尾保留连续空槽', () => {
+  const layout = normalizeLayout({ tier: 6, slots: ['PEPE', null, 'DOGE', null, 'ETHFI', null], favorites: [] }, REG);
+  assert.deepEqual(layout.slots, ['PEPE', 'DOGE', 'ETHFI', null, null, null]);
+  // 幂等
+  assert.deepEqual(normalizeLayout(layout, REG).slots, ['PEPE', 'DOGE', 'ETHFI', null, null, null]);
+});
+
+test('删中间一卡：后续已占用卡依次前移补位', () => {
+  const layout = normalizeLayout({ tier: 4, slots: ['PEPE', 'DOGE', 'ETHFI', null], favorites: [] }, REG);
+  const removed = assignSlot(layout, 1, null, REG);
+  assert.equal(removed.error, null);
+  assert.deepEqual(removed.layout.slots, ['PEPE', 'ETHFI', null, null]);
+});
+
+test('删尾卡：其余卡位置不变，仅末尾多一个空槽', () => {
+  const layout = normalizeLayout({ tier: 4, slots: ['PEPE', 'DOGE', null, null], favorites: [] }, REG);
+  const removed = assignSlot(layout, 1, null, REG);
+  assert.equal(removed.error, null);
+  assert.deepEqual(removed.layout.slots, ['PEPE', null, null, null]);
+});
+
+test('删卡后一币一卡与持久化语义不变：紧凑布局可被校验再规范化', () => {
+  const layout = normalizeLayout({ tier: 4, slots: ['PEPE', 'DOGE', 'ETHFI', null], favorites: ['DOGE'] }, REG);
+  const removed = assignSlot(layout, 0, null, REG).layout;
+  assert.deepEqual(removed.slots, ['DOGE', 'ETHFI', null, null]);
+  const res = validateLayoutInput(removed, REG);
+  assert.equal(res.ok, true);
+  assert.deepEqual(res.value.slots, ['DOGE', 'ETHFI', null, null]);
+  assert.deepEqual(res.value.favorites, ['DOGE']);
+  assert.equal(new Set(res.value.slots.filter(Boolean)).size, 2);
 });
 
 test('缩档保留前 N 槽，收藏不变', () => {

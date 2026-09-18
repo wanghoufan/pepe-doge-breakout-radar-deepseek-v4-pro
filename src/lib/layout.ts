@@ -4,6 +4,8 @@
  * 语义（PRODUCT_PLAN V0.2 冻结）：
  * - 档位即布局：仅 4 / 6 / 9 三档，卡槽数 = 档位；
  * - 一币一卡：同一标的不得占用多个卡槽（重复项保留首个，其余置空）；
+ * - 紧凑无中空：已占用卡槽一律前移靠拢，仅末尾可留连续空槽（删卡后后卡依次顶位，
+ *   保持卡标识与相对顺序不变，不重排、不串改）；
  * - 确定性补位：扩档时按「收藏优先、注册表稳定顺序次之」补入尚未占用的已启用标的；
  * - 缩档：保留前 N 个卡槽（被移除卡槽的标的不显示，收藏不变）；
  * - 停用 / 非法标的：从卡槽安全清除（收藏可保留但选择器不再展示）。
@@ -44,10 +46,25 @@ export function slotCount(tier: LayoutTier): number {
   return tier;
 }
 
+/** 紧凑化卡槽：合法占用项按原相对顺序前移靠拢，去重后其余位置补 null（仅末尾为空）。 */
+function compactSlots(input: (string | null)[]): (string | null)[] {
+  const out: (string | null)[] = new Array(input.length).fill(null);
+  const used = new Set<string>();
+  let write = 0;
+  for (const s of input) {
+    if (typeof s === 'string' && s && !used.has(s)) {
+      out[write] = s;
+      used.add(s);
+      write += 1;
+    }
+  }
+  return out;
+}
+
 /**
  * 把任意输入规范成合法布局（幂等）：
  * - tier 非法 → 默认 4；
- * - slots 截断/补齐到 tier；
+ * - slots 紧凑化到 tier：合法占用项按原相对顺序前移靠拢，仅末尾补 null；
  * - slots 去重（一币一卡），非字符串/空串 → null；
  * - 未在 registry 中的标的 / 非 enabled → 清除；
  * - favorites 去重并仅保留 enabled。
@@ -61,11 +78,13 @@ export function normalizeLayout(
   const rawSlots = Array.isArray(input?.slots) ? input!.slots : [];
   const slots: (string | null)[] = new Array(slotCount(tier)).fill(null);
   const used = new Set<string>();
-  for (let i = 0; i < slotCount(tier); i += 1) {
+  let write = 0;
+  for (let i = 0; i < rawSlots.length && write < slotCount(tier); i += 1) {
     const id = rawSlots[i];
     if (typeof id !== 'string' || !id || !enabled.has(id) || used.has(id)) continue;
-    slots[i] = id;
+    slots[write] = id;
     used.add(id);
+    write += 1;
   }
   const favorites: string[] = [];
   const seenFav = new Set<string>();
@@ -84,25 +103,33 @@ export function normalizeLayout(
 }
 
 /**
- * 确定性补位：把空槽按「收藏优先、注册表稳定顺序次之」填入尚未占用的已启用标的。
- * 不改动已有卡槽（不串改），不生成重复卡；标的不足则保留空槽。
+ * 确定性补位：先紧凑化现有占用（前移靠拢、相对顺序不变），再把空槽按
+ * 「收藏优先、注册表稳定顺序次之」填入尚未占用的已启用标的。
+ * 不串改已有卡、不生成重复卡；标的不足则仅在末尾保留连续空槽。
  */
 export function fillSlots(layout: WatchLayout, registry: RegistryAsset[] = getEnabledAssets()): WatchLayout {
   const enabled = getEnabledAssets(registry);
   const enabledIds = new Set(enabled.map((a) => a.id));
-  const used = new Set(layout.slots.filter((s): s is string => !!s && enabledIds.has(s)));
+  const slots: (string | null)[] = new Array(layout.slots.length).fill(null);
+  const used = new Set<string>();
+  let write = 0;
+  for (const s of layout.slots) {
+    if (s && enabledIds.has(s) && !used.has(s)) {
+      slots[write] = s;
+      used.add(s);
+      write += 1;
+    }
+  }
   const order: string[] = [];
   for (const id of layout.favorites) if (enabledIds.has(id) && !used.has(id)) order.push(id);
   for (const a of enabled) if (!used.has(a.id) && !order.includes(a.id)) order.push(a.id);
 
-  const slots = layout.slots.map((s) => (s && enabledIds.has(s) ? s : null));
+  // 补位从末尾连续空槽起（既有卡槽位置保持紧凑不变）。
   let qi = 0;
-  // 补位从第一个空槽起（保持既有卡槽位置不变）。
-  for (let i = 0; i < slots.length && qi < order.length; i += 1) {
-    if (slots[i] == null) {
-      slots[i] = order[qi];
-      qi += 1;
-    }
+  while (write < slots.length && qi < order.length) {
+    slots[write] = order[qi];
+    write += 1;
+    qi += 1;
   }
   return { ...layout, slots };
 }
@@ -117,7 +144,8 @@ export function withTier(
   return fillSlots(resized, registry);
 }
 
-/** 把某卡槽绑定到某标的：单向更新该槽；已占用他槽的标的会被拒绝（一币一卡）。 */
+/** 把某卡槽绑定到某标的：单向更新该槽；已占用他槽的标的会被拒绝（一币一卡）。
+ *  传 null 表示移除：后续占用卡依次前移补位（紧凑化），仅末尾留空。 */
 export function assignSlot(
   layout: WatchLayout,
   slotIndex: number,
@@ -133,9 +161,9 @@ export function assignSlot(
     const dupIndex = layout.slots.findIndex((s, i) => s === assetId && i !== slotIndex);
     if (dupIndex >= 0) return { layout, error: '该标的已被其他卡槽占用（一币一卡）' };
   }
-  const slots = [...layout.slots];
-  slots[slotIndex] = assetId;
-  return { layout: { ...layout, slots }, error: null };
+  const next = [...layout.slots];
+  next[slotIndex] = assetId;
+  return { layout: { ...layout, slots: compactSlots(next) }, error: null };
 }
 
 /** 收藏开关。 */

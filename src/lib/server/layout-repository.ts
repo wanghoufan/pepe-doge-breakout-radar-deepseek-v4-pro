@@ -87,7 +87,8 @@ export function readLayout(
   );
 
   if (Array.isArray(rawSlots)) {
-    const dropped = rawSlots.filter((s, i) => typeof s === 'string' && s && normalized.slots[i] !== s).length;
+    const kept = new Set(normalized.slots.filter((s): s is string => !!s));
+    const dropped = rawSlots.filter((s) => typeof s === 'string' && s && !kept.has(s)).length;
     if (dropped > 0) noticeParts.push(`已清除 ${dropped} 个失效/未启用卡槽绑定`);
   }
 

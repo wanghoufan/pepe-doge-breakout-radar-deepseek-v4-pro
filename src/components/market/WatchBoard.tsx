@@ -391,6 +391,7 @@ export function WatchBoard() {
                         className="hover:text-foreground"
                         onClick={() => {
                           if (!config) return;
+                          // 移除传 null：assignSlot 会紧凑化，后续卡依次前移补位，仅末尾留空。
                           const r = assignSlot(config, i, null, layoutRegistry);
                           void persist(r.layout);
                         }}
@@ -411,7 +412,7 @@ export function WatchBoard() {
                     dataStatus={overview.data ? coinStatus(asset.id) : undefined}
                     staleReason={overview.data ? coinReason(asset.id) : undefined}
                   />
-                ) : (
+                ) : i >= usedCount ? (
                   <button
                     type="button"
                     onClick={() => setActiveSlot(i)}
@@ -421,7 +422,7 @@ export function WatchBoard() {
                     <span>空槽 {i + 1}</span>
                     <span className="text-[11px]">选择标的</span>
                   </button>
-                )}
+                ) : null}
               </div>
             );
           })}

@@ -136,3 +136,42 @@
 - 失败/未知仍 404：asset page 保留 `if (!asset) notFound()`，JIT 仅 candidate＋outcome.ok 才返回；目录不可用/非 candidate/核验不过一律 null。
 - 无胜率表述：grep 本轮文件零命中；全仓唯一命中为 AssetPicker 既有合规注释行。
 - initial 初值无闪断假信号：服务端同请求同实例直出 signal/price/freshness，客户端仅作 `?? initial` 回退，不覆盖 overview 实测值；live 取 `overview ? status==='live' : initial.live`，语义正确。
+
+---
+
+# CODE REVIEW — Web 推送 MVP（e2e277d）
+
+- Task: Web 推送 MVP（服务端检查循环＋VAPID＋订阅落库＋sw 全局通知，本地单用户）
+- Commit: e2e277d（HEAD~1 起 diff，19 文件 +1091/-2）
+- Reviewer: code-reviewer（本窗口，只审不改）
+- Result: PASS（P0 0；P1-blocking 0；P1-非blocking 2；P2 2；问题数 4；均不拦，可直接进 QA）
+
+## P0 / P1 Findings
+
+- 无 P0；无 P1-blocking。
+- P1-非blocking（1）：unsubscribe 路由 `deletePushSubscription` 未包 try/catch（subscribe 有，unsubscribe 无）。DB 异常时 Next 默认 500 且无 `ok:false` 信封。改法：与 subscribe 同式包 try/catch 回 `{ok:false,error}` 500。
+- P1-非blocking（2）：`savePushSubscription` 手动 `BEGIN/COMMIT` 无嵌套事务保护；若调用方未来在事务内调用则 `BEGIN` 直接抛。改法：用 `db.transaction()` 包装或先查 `PRAGMA`/inTransaction；当前单调用点无事，记后续。
+
+## P2 Backlog Findings
+
+- P2：`countPushSubscriptions` 全表读后取 length（O(n) 反序列化），订阅量大时可改 `SELECT COUNT(*)`。本地单用户无影响。
+- P2：`readPushSubscriptions` catch 全吞返回 `[]`，发送轮会误判为"无订阅"并重置基线（丢一次检查节拍）。建议区分"表缺失"与"DB 错误"日志一句；不拦。
+
+## 红线核查（全部通过）
+
+- Quant 红线零改动：推送层只消费 `deriveActionState` 结果（`collectActionObservations` 经 `actionInputFromSignal` 组装）；push.ts/push-service.ts 无阈值/权重/状态机/回测引用；PUSH7 测试逐项断言（mfe-mae/MFE/MAE/outcome/backtest/samples/DEFAULT_V2_*）；全仓测试 241/241 PASS。
+- 密钥禁进 Git：`.env.local`＋`.env.*.local`＋`vapid-keys*.json`＋`*.vapid.json` 已入 .gitignore；`git check-ignore .env.local`=IGNORED；`git ls-files` 无 .env.local、无私钥/订阅数据（真实 .db 被 *.db 排除；迁移 0003 仅建表结构）。
+- sw.js 无敏感信息：仅 push 展示＋click 聚焦/导航，无密钥、无 endpoint 回传、无 fetch。
+- 文案禁语：diff 内"买入/胜率/概率/必涨"仅 3 处禁语声明注释；payload 复用 alert-center ALERT_COPY＋buildAlertBody，PUSH5 逐 action 断言禁语表＋四字段（title/body/tag/url）＋NO_ACTION→null。
+- 订阅校验：`isValidPushSubscription`（endpoint/p256dh/auth 非空 trim）＋路由 400（invalid_subscription）＋repository 内二次校验抛 `push_subscription_invalid`；upsert 幂等（ON CONFLICT 覆盖 keys＋刷新 created_at），PUSH6 覆盖增删读＋校验。
+- 检查循环不崩进程：`startPushCheckLoop` 未配置 VAPID 只 warn 跳过；`setInterval` 回调 `.catch` 记日志；`sendPushToAll` 单订阅失败隔离（404/410 清理、其余计数＋console.error）；`runPushCheckOnce` 冷启动只建基线不重报、无订阅不拉行情；`timer.unref()` 防 hanging。
+- 测试真覆盖：PUSH1–PUSH7（迁移幂等＋版本链／边沿冷启动／去重键／订阅过滤／禁语／落库校验／禁未来数据）＋ `resetPushCheckStateForTests` 防串状态。
+
+## 卡槽紧凑化专项复审（2026-09-18）
+- 范围：src/lib/layout.ts（compactSlots/normalize/fillSlots/assignSlot）、layout-repository.ts（notice计数）、WatchBoard空槽守卫、layout.test.ts；`git diff HEAD` 未提交改动。
+- Result: CONDITIONAL（问题数：P1×0 / P2×2 / P3×1；无P0）
+- P2-1：assignSlot 非null绑定同样走compactSlots，会附带前移（如 [PEPE,null,DOGE,null] 在3号槽放入ETHFI后DOGE从index2移到1）。与"不串改"注释存在张力；若为有意语义需在注释写明"任何写入均紧凑化"，否则仅null移除时紧凑。
+- P2-2：WatchBoard空槽守卫 `i >= usedCount` 依赖"紧凑不变式"（compact后空槽仅在末尾才成立）。若服务端返回历史非紧凑布局且未经normalize直接渲染，中空位置将被渲染为null（卡片消失而非空槽按钮）。建议渲染前对config.slots做一次normalize或以 `assetId==null` 为空槽判据。
+- P3：任务称layout.test.ts 17项，实测 `node --import tsx --test src/lib/layout.test.ts` 为14/14 PASS；数量口径对不上，建议核对是否漏算/指全仓数。
+- 通过项：删卡相对顺序不变（PEPE,DOGE,ETHFI删中卡→DOGE,ETHFI；删尾卡位置不变）；一币一卡不破（normalize去重保留首个＋紧凑、assignSlot拒他槽重复、validate一币一卡报错口径不变）；持久化语义不变（schemaVersion/tier/slots长度/favorites口径未动，validate对紧凑布局ok，notice计数仅从位置口径改为集合口径、dropped语义基本等价）；Quant红线零改动（diff仅布局/展示层）。
+- 验证：layout.test.ts 14/14 PASS。
