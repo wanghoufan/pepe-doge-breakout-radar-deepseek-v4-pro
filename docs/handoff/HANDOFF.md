@@ -10,7 +10,7 @@
 - DEV_BASELINE：PRODUCT_PLAN_V0.2（Phase2 锁定，变更只走 Change C）
 - CHANGE_REQUEST：C（已成立：加币＋注册表重构＋SQLite 配置；范围以 V0.2 为准）
 - Stage ID（本阶段叫什么）：多标的观察盘 MVP＋P1 收尾＋核验启用闭环＋详情动态化＋代理分支（radar-live）
-- 剩 P0（没完的才列，多一条都不行）：无（DEV 链全PASS，supervisor复检PASS，打回 0/2）
+- 剩 P0（没完的才列，多一条都不行）：等用户 watchlist（常看币名单），到后批量核验启用（A 方案；B 全量 463 备选）
 - 人类5决策回执（2026-09-18 12:55，用户原话收录）：①首批币=交易所公开可拉取的全部币（OKX 永续为准，全量进注册表，启用前逐币核验）；②卡片档位按 4/6/9 先来；③筛选=搜名字＋收藏；④不允许重复卡，一币一卡；⑤档位即布局切换（1分4/1分6/1分9），币数与槽位对齐；⑥配置存储用户定：本地 SQLite（服务端文件）；TM 已告知 Vercel 生产文件系统短暂、生产持久化另议。
 - 当前 Task（正干到哪）（累计打回 n/2，supervisor每次打回时TM同步更新）：DEV-多标的观察盘已收工待交付；累计打回 0/2
 - 执行链/Session（可选，仅真 resume 通道填，普通 subagent 可空；TM 只记录/引用，ID 由基础设施返回，不手造、不要求用户复制；返工确认是否原链；senior 升级开新链后更新）：builder opencode直调同链返工2轮；reviewer/QA 本窗口；supervisor opencode直调

@@ -31,3 +31,12 @@ CREATE TABLE IF NOT EXISTS asset_verification (
   verified_at INTEGER NOT NULL,
   by          TEXT NOT NULL
 );
+
+-- Web Push 订阅：一行一订阅（endpoint 唯一），keys 为客户端公钥/认证密钥。
+-- 订阅数据属本地私有数据，真实 .db 已被 Git 排除（见 .gitignore）。
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  endpoint   TEXT PRIMARY KEY,
+  p256dh     TEXT NOT NULL,
+  auth       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);

@@ -174,3 +174,9 @@ Desktop.ini
 /var/
 /DockerData/
 /DockerBackups/
+
+# Web Push：VAPID 私钥与本地密钥文件禁进 Git（订阅数据存 SQLite，已被 *.db 排除）
+.env.local
+.env.*.local
+vapid-keys*.json
+*.vapid.json

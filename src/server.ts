@@ -1,6 +1,7 @@
 import { createServer } from 'http';
 import { parse } from 'url';
 import next from 'next';
+import { startPushCheckLoop } from './lib/server/push-service';
 
 const dev = process.env.COZE_PROJECT_ENV !== 'PROD';
 const hostname = process.env.HOSTNAME || 'localhost';
@@ -31,5 +32,7 @@ app.prepare().then(() => {
         dev ? 'development' : process.env.COZE_PROJECT_ENV
       }`,
     );
+    // 全局推送检查循环（关页也能收到系统通知；未配置 VAPID 时自动跳过，失败只记日志）。
+    startPushCheckLoop();
   });
 });

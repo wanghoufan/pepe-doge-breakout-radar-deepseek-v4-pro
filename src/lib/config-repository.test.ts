@@ -28,7 +28,7 @@ test('SQLite：Migration 建立表且幂等', () => {
     assert.ok(tables.includes('asset_verification'));
     assert.ok(tables.includes('schema_migrations'));
     const migrations = db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map((r) => String(r.version));
-    assert.deepEqual(migrations, ['0001_init.sql', '0002_asset_verification.sql']);
+    assert.deepEqual(migrations, ['0001_init.sql', '0002_asset_verification.sql', '0003_push_subscriptions.sql']);
   });
 });
 

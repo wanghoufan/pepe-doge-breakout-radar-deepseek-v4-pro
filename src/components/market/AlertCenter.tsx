@@ -49,6 +49,7 @@ import {
 } from '@/lib/alert-center';
 import { ALERT_SOUNDS, ensureAudioUnlocked, isAudioUnlocked, playAlertSound, stopAlertSound } from '@/lib/alert-sound';
 import { formatTs } from '@/lib/format';
+import { PushToggle } from '@/components/market/PushToggle';
 import { actionInputFromSignal, deriveActionState, type ActionCode } from '@/lib/action';
 import type { AssetSignal } from '@/lib/types';
 
@@ -719,6 +720,7 @@ function SettingsPanel(props: {
           <div>系统通知权限：{props.notifyPerm}（如被拒绝请到浏览器地址栏通知设置中手动允许，本页不再反复弹窗）</div>
           <button type="button" onClick={props.onRequestNotify} className="mt-1 rounded border border-border px-2 py-1">请求通知权限</button>
         </div>
+        <PushToggle />
       </details>
 
       <details className="mt-2">
