@@ -4,15 +4,17 @@ import Link from 'next/link';
 import { AssetDetail } from '@/components/market/AssetDetail';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getHistoricalEvents } from '@/lib/data-store';
-import { ASSETS } from '@/lib/config';
+import { findEnabledAsset } from '@/lib/registry';
+import { getServerRegistry } from '@/lib/server/registry-service';
 import { formatDate, formatPct } from '@/lib/format';
 
-const VALID = ['PEPE', 'DOGE', 'ETHFI'] as const;
-type Coin = (typeof VALID)[number];
-
+/** seed 三币保留静态参数；其余已启用标的按请求动态渲染（force-dynamic）。 */
 export function generateStaticParams() {
   return [{ coin: 'pepe' }, { coin: 'doge' }, { coin: 'ethfi' }];
 }
+
+/** 已启用标的会随核验落库变化，读服务端注册表，不做静态缓存。 */
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
@@ -21,30 +23,34 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { coin } = await params;
   const upper = coin.toUpperCase();
-  const meta = ASSETS[upper as keyof typeof ASSETS];
+  const asset = findEnabledAsset(upper, getServerRegistry());
+  const symbol = asset?.symbol ?? upper;
   return {
-    title: `${meta?.symbol ?? upper} 突破雷达`,
-    description: `${meta?.symbol ?? upper} 蓄势/突破/过热/失效 六阶段状态雷达与历史典型形态。`,
+    title: `${symbol} 突破雷达`,
+    description: `${symbol} 蓄势/突破/过热/失效 六阶段状态雷达与历史典型形态。`,
   };
 }
 
 export default async function AssetPage({ params }: { params: Promise<{ coin: string }> }) {
   const { coin } = await params;
-  const upper = coin.toUpperCase() as Coin;
-  if (!VALID.includes(upper)) notFound();
+  const upper = coin.toUpperCase();
+  // 有效集合 = seed 三币 + 服务端已启用标的（同一注册表口径）；未知/未启用一律 404。
+  const asset = findEnabledAsset(upper, getServerRegistry());
+  if (!asset) notFound();
 
-  const meta = ASSETS[upper];
-  const events = getHistoricalEvents().filter((e) => e.coin === upper).sort((a, b) => b.startTs - a.startTs);
+  const meta = { symbol: asset.symbol, themecolor: asset.themecolor, hasHistoryBaseline: asset.hasHistoryBaseline };
+  const events = getHistoricalEvents().filter((e) => e.coin === asset.id).sort((a, b) => b.startTs - a.startTs);
+  const hasBaseline = asset.hasHistoryBaseline && events.length > 0;
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6">
-      <AssetDetail coin={upper} />
+      <AssetDetail coin={asset.id} meta={meta} />
 
       <section>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">该币种历史典型形态（{events.length}）</h2>
-        {events.length === 0 && (
+        {!hasBaseline && (
           <p className="rounded-md border border-dashed px-3 py-4 text-xs text-muted-foreground">
-            {upper} 暂无历史基线样本（21 个历史事件为 PEPE 11 + DOGE 10），相似性与研究指标未知/缺失，禁编造。本页仅展示实时信号。
+            {asset.symbol} 暂无历史基线样本（21 个历史事件为 PEPE 11 + DOGE 10），相似性与研究指标未知/缺失，禁编造。本页仅展示实时信号。
           </p>
         )}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

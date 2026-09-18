@@ -10,8 +10,11 @@
  * - 缓存：内存 TTL 缓存，短时间重复请求不出网。
  * - 限流/去重：同一 URL 的进行中请求共享同一个 promise。
  * - 独立降级：OKX 与 Binance 各自成败互不影响，由编排层决定整体状态。
+ * - 代理：本地 dev 若存在 HTTP(S)_PROXY（大小写均认）则经 undici ProxyAgent 走代理；
+ *   无变量时保持 Node 默认 dispatcher，行为与接入代理前逐字节一致（生产无变量，零影响）。
  * - 绝不返回模拟数据：失败就是失败，诊断说清楚原因。
  */
+import { ProxyAgent, fetch as undiciFetch, type Dispatcher } from 'undici';
 import type { Candle } from './types';
 import { ASSETS } from './config';
 
@@ -114,13 +117,45 @@ function classify(err: unknown): { errorKind: ErrorKind; detail: string; httpSta
   return { errorKind: 'network', detail: raw, httpStatus: null };
 }
 
+/** 按环境变量缓存代理 dispatcher：同一代理地址复用同一 agent，只影响请求线路。 */
+let cachedProxyUrl: string | null = null;
+let cachedProxyAgent: ProxyAgent | null = null;
+
+/**
+ * 读取代理地址：HTTPS 优先于 HTTP，大小写环境变量均认；无变量返回 null。
+ * 只读环境，不发请求，便于单测断言分支。
+ */
+export function readProxyUrl(env: NodeJS.ProcessEnv = process.env): string | null {
+  return env.HTTPS_PROXY || env.https_proxy || env.HTTP_PROXY || env.http_proxy || null;
+}
+
+/**
+ * 按环境返回请求 dispatcher：有代理变量则返回（缓存的）ProxyAgent；
+ * 无变量返回 undefined，fetch 走 Node 默认 dispatcher（行为不变）。
+ */
+export function getRequestDispatcher(env: NodeJS.ProcessEnv = process.env): Dispatcher | undefined {
+  const url = readProxyUrl(env);
+  if (!url) return undefined;
+  if (cachedProxyAgent && cachedProxyUrl === url) return cachedProxyAgent;
+  if (cachedProxyAgent) {
+    void cachedProxyAgent.close().catch(() => {});
+  }
+  const agent = new ProxyAgent(url);
+  cachedProxyUrl = url;
+  cachedProxyAgent = agent;
+  return agent;
+}
+
 /** 单个地址的 JSON 拉取，返回原始 body 或抛出可归类错误。 */
 async function fetchOnce(url: string, timeoutMs: number): Promise<unknown> {
-  const res = await fetch(url, {
+  const dispatcher = getRequestDispatcher();
+  const init: NonNullable<Parameters<typeof undiciFetch>[1]> = {
     signal: AbortSignal.timeout(timeoutMs),
     headers: { accept: 'application/json' },
     cache: 'no-store',
-  });
+  };
+  if (dispatcher) init.dispatcher = dispatcher;
+  const res = await undiciFetch(url, init);
   if (!res.ok) throw new Error(`http_${res.status}`);
   return await res.json();
 }

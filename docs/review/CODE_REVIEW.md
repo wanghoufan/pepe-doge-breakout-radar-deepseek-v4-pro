@@ -87,3 +87,26 @@
 - 测试：asset-verification.test.ts 8 项＋config-repository（含 0002 幂等断言）共 16/16 通过（已复跑）；失败路径为真覆盖（注入假 deps，无网络）。route 级 422 映射为例外缺项（见 P1-blocking）。
 
 ## 终核（P1-blocking 闭环，2026-09-18）：PASS —— mapVerifyOutcomeToHttp 纯函数存在（asset-verification.ts:238），四分支测试真覆盖且断言形状（未知422/未过422/503/200，asset-verification.test.ts:229-279）；route 已改调该函数、无重复映射逻辑（route.ts:38-41）；pnpm test 226/226＋tsc exit 0 全绿。
+
+## 第四轮复审（market-client 代理 plumbing，2026-09-18）
+
+- Task: market-client 代理 plumbing（本地 dev 经 HTTP(S)_PROXY 直连 OKX；生产无变量零影响）
+- Commit: HEAD 起 diff（market-client.ts / market-client-proxy.test.ts untracked / package.json＋pnpm-lock undici）
+- Reviewer: code-reviewer（本窗口，只审不改）
+- Result: PASS（P0 0；P1-blocking 0；P2 2；问题数 2；以下均为后续指引，不拦本轮）
+
+## P0 / P1 Findings
+
+- 无 P0；无 P1-blocking。无变量路径：getRequestDispatcher 返回 undefined→undiciFetch 走 Node 默认 dispatcher，与原全局 fetch 同为 undici 内核、同一 signal/headers/cache 透传，生产（无代理变量）零影响成立；有变量仅 init.dispatcher 附加 ProxyAgent，只改线路。fetchOnce 其余逻辑（ok 判定/抛错归类/缓存限频）零改动。
+
+## P2 Backlog Findings
+
+- P2：readProxyUrl 不认 ALL_PROXY/all_proxy，但测试 save/restore 清理了该键。当前行为＝显式只支持 HTTP(S)_PROXY 四键、ALL_PROXY 被忽略；若用户配了 ALL_PROXY 会静默直连失败。改法（二选一）：要么 readProxyUrl 追加 ALL_PROXY 回退，要么注释声明"ALL_PROXY 不支持"；测试任选一分支断言即可。
+- P2：旧 agent 切换时 `void close().catch(()=>{})` 无日志。同一进程切代理地址时旧连接静默关闭，排障无痕。改法：console.debug 一句或注释说明即可；不拦。
+
+## 红线核查（全部通过）
+
+- Quant 红线零改动：indicators.ts / config.ts / state-machine.ts / v2/engine.ts / event-analysis.ts 本轮 diff 为空。
+- undici 新增依赖必要：实证根因成立——外置 ProxyAgent dispatcher 与 Node 内置 fetch 跨 undici 版本符号不互通，全链改用外置 undiciFetch 是正确解；只用内置 fetch 无法注入代理 dispatcher。版本 ^8.10.2 与 Node 22 无冲突（pnpm test＋tsc 全绿为证）。
+- 测试真覆盖非摆设：PROXY-U1/U2/U3＋E1 共 4 项（显式 env 隔离 shell 真实代理；U3 断言同地址实例复用＋无变量回退；E1 经本地回环代理桩断言 CONNECT 命中 okx.com:443 且未触达外网）。
+- 测试：`pnpm test` 234/234 通过（226 基线＋新增 8 项含 PROXY 4＋asset-page 4，未单独跑 tsc 但 esbuild/tsx 加载即验类型导入）。

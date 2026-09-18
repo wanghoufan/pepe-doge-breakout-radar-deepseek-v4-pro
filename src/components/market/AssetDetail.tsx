@@ -63,17 +63,23 @@ interface OverviewResp {
   errors?: string[];
   fundingProvider?: 'binance' | 'okx' | null;
   freshness?: FeedFreshness | null;
-  freshnessByCoin?: Record<'PEPE' | 'DOGE' | 'ETHFI', FeedFreshness> | null;
-  fundingTs?: Record<'PEPE' | 'DOGE' | 'ETHFI', number | null> | null;
+  freshnessByCoin?: Record<string, FeedFreshness> | null;
+  fundingTs?: Record<string, number | null> | null;
   data: {
-    pepe: AssetSignal | null;
-    doge: AssetSignal | null;
-    ethfi: AssetSignal | null;
-    prices: Record<'PEPE' | 'DOGE' | 'BTC' | 'ETHFI', { last: number; ts: number } | null>;
-    lastConfirmedTs: { PEPE: number | null; DOGE: number | null; BTC: number | null; ETHFI: number | null };
-    intraday: { PEPE: Candle | null; DOGE: Candle | null; BTC: Candle | null; ETHFI: Candle | null };
+    /** 以标的 id 为键的动态信号映射（seed 三币 + 动态已启用标的）。 */
+    signals: Record<string, AssetSignal | null>;
+    prices: Record<string, { last: number; ts: number } | null>;
+    lastConfirmedTs: Record<string, number | null>;
+    intraday: Record<string, Candle | null>;
     sources: Record<string, unknown>;
   };
+}
+
+/** 注册表展示元数据（内置 ASSETS 缺键的动态标的走同一口径）。 */
+export interface AssetDetailMeta {
+  symbol: string;
+  themecolor: string;
+  hasHistoryBaseline: boolean;
 }
 
 const TIMEFRAMES: { key: Timeframe; label: string }[] = [
@@ -82,15 +88,19 @@ const TIMEFRAMES: { key: Timeframe; label: string }[] = [
   { key: '1D', label: '1D' },
 ];
 
-export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' | 'ETHFI' }) {
-  const meta = ASSETS[coin];
+export function AssetDetail({ coin, meta: metaOverride }: { coin: string; meta?: AssetDetailMeta | null }) {
+  // 内置 ASSETS 缺键（动态启用标的）时灰色回退（照抄 SignalCard metaOverride 模式）。
+  const meta =
+    metaOverride ??
+    ASSETS[coin] ??
+    { symbol: coin, themecolor: '#94A3B8', hasHistoryBaseline: false };
   const [tf, setTf] = useState<Timeframe>('4H');
 
   const candlesApi = useApi<CandlesResp>(`/api/market/candles?coin=${coin}&bar=${tf}&limit=140`);
   const fundingApi = useApi<FundingResp>(`/api/market/funding?coin=${coin}&limit=30`);
   const overviewApi = useApi<OverviewResp>('/api/market/overview');
 
-  const signal = coin === 'PEPE' ? overviewApi.data?.data.pepe : coin === 'DOGE' ? overviewApi.data?.data.doge : overviewApi.data?.data.ethfi;
+  const signal = overviewApi.data?.data.signals?.[coin] ?? null;
   const live = overviewApi.data?.status === 'live';
   const price = overviewApi.data?.data.prices?.[coin] ?? null;
   // P0-1 三态：优先用本标分标新鲜度（分标隔离），缺字段时按全局 freshness / live 回退。
@@ -201,6 +211,13 @@ export function AssetDetail({ coin }: { coin: 'PEPE' | 'DOGE' | 'ETHFI' }) {
           )}
         </CardContent>
       </Card>
+
+      {/* 研究隔离：无独立历史基线标的的研究指标一律未知/缺失，禁借用其他标的统计 */}
+      {!meta.hasHistoryBaseline && (
+        <div className="rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+          无独立历史研究基线：该标的 Precision / Recall / FPR / Success Rate 与 MFE / MAE 一律「未知/缺失」，不借用其他标的统计（统一观察规则，待验证）。
+        </div>
+      )}
 
       {/* 当前行动（Level 1–3，永远在最前） */}
       <ActionCard action={action} />

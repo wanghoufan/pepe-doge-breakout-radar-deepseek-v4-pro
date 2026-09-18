@@ -17,7 +17,7 @@
  */
 import { DEFAULT_CONFIG } from './config';
 import { formatPrice } from './format';
-import type { AssetId, AssetSignal, EnvironmentGate, HardVetoKind, ScoreStatus, StateCode } from './types';
+import type { AssetSignal, EnvironmentGate, HardVetoKind, ScoreStatus, StateCode } from './types';
 
 export type ActionCode =
   | 'REJECT'
@@ -480,7 +480,8 @@ export function deriveActionState(input: ActionInput): ActionState {
 /* ------------------------------------------------------------------ */
 
 export interface ActionSourceOpts {
-  asset: AssetId;
+  /** 标的 id（放宽为 string：已启用新标的走同一推导链，不再限定内置四币）。 */
+  asset: string;
   price: number | null;
   priceTs: number | null;
   /** 调用方已知的全局状态（unavailable / stale / ok）；默认由 signal 是否存在推导。 */

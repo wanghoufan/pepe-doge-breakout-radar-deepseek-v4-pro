@@ -206,6 +206,16 @@ export function findAsset(id: string, registry: RegistryAsset[] = getSeedRegistr
 }
 
 /**
+ * 详情页/实时接口统一解析：seed 三币 + 服务端已启用标的（大小写不敏感）。
+ * 未知 / 未启用（candidate、disabled、reference）一律返回 null，由调用方决定 404/400。
+ */
+export function findEnabledAsset(id: string, registry: RegistryAsset[] = getSeedRegistry()): RegistryAsset | null {
+  const upper = String(id ?? '').trim().toUpperCase();
+  if (!upper) return null;
+  return getEnabledAssets(registry).find((a) => a.id === upper) ?? null;
+}
+
+/**
  * 把 OKX 公开永续目录合并成候选记录（纯函数，幂等）。
  * - 已有标的（按 instId 匹配）保持原状态，不被目录覆盖（防止候选覆盖已核验/已启用）；
  * - 未知 instId 追加为 candidate（verifiedAt/evidence 为 null），绝不 enabled；

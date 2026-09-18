@@ -107,3 +107,24 @@
 - 端口记账：`:5123` 上有本任务开始前已存在的监听进程（PID 14269，13:30 起，未动）；自起 dev 因 `.next/dev/lock` 冲突未能绑定，API 实测走该既存实例（同一工作树代码），自起进程已杀、`/tmp/qa-5124*` 与 `/tmp/qa-5123-verify*` 已删，`var/` 不存在无残留
 - 真机预检：本轮为 API＋SSR＋grep 验证，无真机 session，记 NOT_VERIFIED
 - 结论：PASS，新 BUG 0（沿用既有 BUG-001/002/003＋INFO，不新增）
+
+## QA-2026-09-18-生产真机核验启用E2E（headless，不碰用户键鼠）
+
+- 起因：用户真机搜 HYPE/XMR 显示 463 候选全未启用、无法选中
+- 根因两处：①核验→启用闭环缺失（已补）；②OKX funding-rate 解析用错字段（realizedRate→fundingRate，HYPE 无 Binance 链路故暴露），已修 `07b9670`
+- 生产 E2E（截图 qabrowser/qa-hype-enabled.png）：搜 hype → 候选 HYPE「核验并启用」→ 通过 → 已启用(1)＋无研究基线 badge＋放入按钮；池 466＝4 已启用＋462 待核验；JS 报错 0
+- 注意：Vercel /tmp 实例级持久，换实例后需重核验（已声明）；HYPE 在生产某实例已启用
+- 结论：PASS，可用
+
+## QA-2026-09-18-第四轮｜market-client 代理 plumbing 回归（CODE_REVIEW PASS 后）
+
+- 基线：DEV_BASELINE=PRODUCT_PLAN_V0.2；CODE_REVIEW 第四轮 PASS（2026-09-18，P1-blocking 0）
+- 单元/类型：`pnpm test` 234/234 通过；`pnpm ts-check` exit 0（tsc 无输出）
+- 接口（本轮未自起 dev：`scripts/dev.sh` 硬编码 PORT=5000 且 `.next/dev/lock` 被既存 :5000 实例占用，未杀他人进程；API 实测走既存 :5000 实例，同一工作树代码）：
+  - `GET /api/assets` → 200：`candidates.status=live`，`total=466`（`candidateCount=463`＋`enabledCount=3`），enabled=[PEPE,DOGE,ETHFI]——此前沙箱 DNS 墙 unavailable，修完已变 live＋总数>0，符合预期
+  - `GET /api/market/overview` → 200：`ok:true`，`data.status=live`，keys 含 btc/signals/pepe/doge/ethfi/prices/sources——此前 unavailable，已变 live
+  - 环境：shell 带 `HTTP_PROXY/HTTPS_PROXY/ALL_PROXY`（127.0.0.1 本地代理），即代理 plumbing 生效路径
+- 无胜率表述：`rg 胜率|准确率` 命中仅合规禁令声明（methodology 页“不输出胜率…”×3、action.ts 注释、禁语表/测试断言）；ActionCard/实时信号无概率化收益表述 → 通过
+- 临时文件：自起 5123 进程已杀（未绑定成功，无残留服务）；`/tmp/qa-5123-proxy.*` 已删；`var/dev.db*` 为既存 :5000 实例产物（gitignored），未动
+- 真机预检：本轮为 API＋grep 验证，无真机 session，记 NOT_VERIFIED
+- 结论：PASS，新 BUG 0（沿用既有 BUG-001/002/003＋INFO，不新增）
