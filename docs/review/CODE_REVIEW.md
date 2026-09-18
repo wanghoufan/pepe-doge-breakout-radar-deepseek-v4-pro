@@ -110,3 +110,29 @@
 - undici 新增依赖必要：实证根因成立——外置 ProxyAgent dispatcher 与 Node 内置 fetch 跨 undici 版本符号不互通，全链改用外置 undiciFetch 是正确解；只用内置 fetch 无法注入代理 dispatcher。版本 ^8.10.2 与 Node 22 无冲突（pnpm test＋tsc 全绿为证）。
 - 测试真覆盖非摆设：PROXY-U1/U2/U3＋E1 共 4 项（显式 env 隔离 shell 真实代理；U3 断言同地址实例复用＋无变量回退；E1 经本地回环代理桩断言 CONNECT 命中 okx.com:443 且未触达外网）。
 - 测试：`pnpm test` 234/234 通过（226 基线＋新增 8 项含 PROXY 4＋asset-page 4，未单独跑 tsc 但 esbuild/tsx 加载即验类型导入）。
+
+---
+
+## JIT＋公开数据读取放宽轮（HEAD diff 5 文件）
+
+- Task: registry-service resolveEnabledAssetJIT＋asset/[coin] JIT＋服务端initial初值＋AssetDetail回退＋candles/funding候选可读放宽
+- Commit: HEAD 未提交 diff（registry-service.ts / asset/[coin]/page.tsx / AssetDetail.tsx / candles/route.ts / funding/route.ts）
+- Reviewer: code-reviewer（本窗口，只审不改）
+- Result: PASS（P0 0；P1-blocking 0；P2 2；问题数 2；以下均为后续指引，不拦本轮）
+
+## P0 / P1 Findings
+
+- 无 P0；无 P1-blocking。
+
+## P2 Backlog Findings
+
+- P2：candles/funding 未知币仍回 400 invalid_coin（非 404）。沿用既有口径（本轮只改 message 文案），详情页未知/失败仍 notFound() 不变；若后续要统一 API 未知语义再议，不拦。
+- P2：JIT 每次未命中都拉 OKX 全目录＋跑真实核验，无负缓存。未知币反复刷详情页会重复打目录/核验链路；后续可加短 TTL 负缓存，不拦。
+
+## 红线核查（全部通过）
+
+- Quant 红线零改动：本轮 diff 仅 5 文件，indicators.ts / config.ts / state-machine.ts / v2/engine.ts / event-analysis.ts 零触碰。
+- 启用门未被绕过：卡片/选择器无改动仍只认 enabled；放宽的只是 candles/funding 公开数据读取（OKX 目录在列即读）＋详情页 JIT（真实 verifyAssetById 通过才回 enabled 并落库，失败/未知返回 null→404）。
+- 失败/未知仍 404：asset page 保留 `if (!asset) notFound()`，JIT 仅 candidate＋outcome.ok 才返回；目录不可用/非 candidate/核验不过一律 null。
+- 无胜率表述：grep 本轮文件零命中；全仓唯一命中为 AssetPicker 既有合规注释行。
+- initial 初值无闪断假信号：服务端同请求同实例直出 signal/price/freshness，客户端仅作 `?? initial` 回退，不覆盖 overview 实测值；live 取 `overview ? status==='live' : initial.live`，语义正确。

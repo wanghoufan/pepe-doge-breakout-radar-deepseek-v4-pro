@@ -88,7 +88,22 @@ const TIMEFRAMES: { key: Timeframe; label: string }[] = [
   { key: '1D', label: '1D' },
 ];
 
-export function AssetDetail({ coin, meta: metaOverride }: { coin: string; meta?: AssetDetailMeta | null }) {
+export function AssetDetail({
+  coin,
+  meta: metaOverride,
+  initial,
+}: {
+  coin: string;
+  meta?: AssetDetailMeta | null;
+  /** 服务端直出的本标初值（同请求同实例；客户端刷新缺标时沿用，不闪断）。 */
+  initial?: {
+    signal: AssetSignal | null;
+    price: { last: number; ts: number } | null;
+    freshness: FeedFreshness | null;
+    live: boolean;
+    generatedAt: number;
+  } | null;
+}) {
   // 内置 ASSETS 缺键（动态启用标的）时灰色回退（照抄 SignalCard metaOverride 模式）。
   const meta =
     metaOverride ??
@@ -100,11 +115,11 @@ export function AssetDetail({ coin, meta: metaOverride }: { coin: string; meta?:
   const fundingApi = useApi<FundingResp>(`/api/market/funding?coin=${coin}&limit=30`);
   const overviewApi = useApi<OverviewResp>('/api/market/overview');
 
-  const signal = overviewApi.data?.data.signals?.[coin] ?? null;
-  const live = overviewApi.data?.status === 'live';
-  const price = overviewApi.data?.data.prices?.[coin] ?? null;
+  const signal = overviewApi.data?.data.signals?.[coin] ?? initial?.signal ?? null;
+  const live = overviewApi.data ? overviewApi.data?.status === 'live' : (initial?.live ?? false);
+  const price = overviewApi.data?.data.prices?.[coin] ?? initial?.price ?? null;
   // P0-1 三态：优先用本标分标新鲜度（分标隔离），缺字段时按全局 freshness / live 回退。
-  const coinFresh = overviewApi.data?.freshnessByCoin?.[coin] ?? null;
+  const coinFresh = overviewApi.data?.freshnessByCoin?.[coin] ?? initial?.freshness ?? null;
   const feedStatus = coinFresh?.status ?? overviewApi.data?.freshness?.status ?? (overviewApi.data ? (live ? 'ok' : 'unavailable') : 'unavailable');
   const feedReason =
     coinFresh?.reason ?? overviewApi.data?.freshness?.reason ?? (live ? null : '实时链路非 live，信号可能不是最新');

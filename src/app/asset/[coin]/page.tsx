@@ -5,7 +5,8 @@ import { AssetDetail } from '@/components/market/AssetDetail';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getHistoricalEvents } from '@/lib/data-store';
 import { findEnabledAsset } from '@/lib/registry';
-import { getServerRegistry } from '@/lib/server/registry-service';
+import { getServerRegistry, resolveEnabledAssetJIT } from '@/lib/server/registry-service';
+import { getMarketOverview } from '@/lib/market-service';
 import { formatDate, formatPct } from '@/lib/format';
 
 /** seed 三币保留静态参数；其余已启用标的按请求动态渲染（force-dynamic）。 */
@@ -34,17 +35,30 @@ export async function generateMetadata({
 export default async function AssetPage({ params }: { params: Promise<{ coin: string }> }) {
   const { coin } = await params;
   const upper = coin.toUpperCase();
-  // 有效集合 = seed 三币 + 服务端已启用标的（同一注册表口径）；未知/未启用一律 404。
-  const asset = findEnabledAsset(upper, getServerRegistry());
+  // 有效集合 = seed 三币 + 服务端已启用标的；未启用候选走 JIT 即时核验
+  //（多实例 /tmp 不共享，页面不依赖访问亲和性）；未知/核验不过一律 404。
+  let asset = findEnabledAsset(upper, getServerRegistry());
+  if (!asset) asset = await resolveEnabledAssetJIT(upper);
   if (!asset) notFound();
 
   const meta = { symbol: asset.symbol, themecolor: asset.themecolor, hasHistoryBaseline: asset.hasHistoryBaseline };
   const events = getHistoricalEvents().filter((e) => e.coin === asset.id).sort((a, b) => b.startTs - a.startTs);
   const hasBaseline = asset.hasHistoryBaseline && events.length > 0;
 
+  // 服务端直出本标信号初值：同请求同实例，JIT 核验落库立即可见，
+  // 客户端 overview 刷新若落到无记录实例则沿用初值（不闪断为不可用）。
+  const overview = await getMarketOverview(getServerRegistry());
+  const initial = {
+    signal: overview.signals[asset.id] ?? null,
+    price: overview.prices[asset.id] ?? null,
+    freshness: overview.freshnessByCoin[asset.id] ?? null,
+    live: overview.status === 'live',
+    generatedAt: overview.generatedAt,
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6">
-      <AssetDetail coin={asset.id} meta={meta} />
+      <AssetDetail coin={asset.id} meta={meta} initial={initial} />
 
       <section>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">该币种历史典型形态（{events.length}）</h2>

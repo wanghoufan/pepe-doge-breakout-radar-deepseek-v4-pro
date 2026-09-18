@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getOkxCandlesByInst } from '@/lib/market-client';
-import { findEnabledAsset } from '@/lib/registry';
+import { getOkxCandlesByInst, getOkxSwapInstruments } from '@/lib/market-client';
+import { findEnabledAsset, registerCandidates } from '@/lib/registry';
 import { getServerRegistry } from '@/lib/server/registry-service';
 
 export const dynamic = 'force-dynamic';
@@ -23,10 +23,16 @@ export async function GET(req: Request) {
   if (!BARS.includes(bar)) {
     return NextResponse.json({ ok: false, error: 'invalid_bar' }, { status: 400 });
   }
-  const asset = findEnabledAsset(coin, getServerRegistry());
+  const serverReg = getServerRegistry();
+  let asset = findEnabledAsset(coin, serverReg);
+  if (!asset) {
+    // 公开数据读取口径：OKX 永续目录在列即允许读 K 线（启用门只管卡片/信号，不拦公开数据）。
+    const dir = await getOkxSwapInstruments();
+    if (dir.ok) asset = registerCandidates(dir.data, serverReg).find((a) => a.id === coin) ?? null;
+  }
   if (!asset) {
     return NextResponse.json(
-      { ok: false, error: 'invalid_coin', message: `${coin} 未启用或不在注册表（仅接受已启用标的）` },
+      { ok: false, error: 'invalid_coin', message: `${coin} 未启用或不在注册表（仅 OKX 永续目录在列标的可读）` },
       { status: 400 },
     );
   }
